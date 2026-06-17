@@ -4,6 +4,11 @@ All notable changes to RPG Toolkit 2D will be documented in this file.
 
 ## [0.1.0]
 
+
+### Phase 7 - Dialogue System and Dialogue Graph Editor
+
+- Added branching dialogue definitions with nodes, choices, conditions, commands, graph validation, a deterministic dialogue runner, presenter and NPC interaction adapters, editor tooling, tests, and documentation.
+
 ### Phase 6 - Interaction and Scene Transition Systems
 
 - Added shared interactable contracts, priority selection, prompt hooks, trigger/overlap/raycast detection support, NPC, pickup, door, and trigger interactable components.
