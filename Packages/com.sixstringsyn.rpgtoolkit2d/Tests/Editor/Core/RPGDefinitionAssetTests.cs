@@ -6,6 +6,7 @@ using SixStringSyn.RPGToolkit2D.Runtime.Core;
 using SixStringSyn.RPGToolkit2D.Runtime.Dialogue;
 using SixStringSyn.RPGToolkit2D.Runtime.Items;
 using SixStringSyn.RPGToolkit2D.Runtime.Quests;
+using SixStringSyn.RPGToolkit2D.Runtime.Stats;
 using UnityEditor;
 using UnityEngine;
 
@@ -31,6 +32,9 @@ namespace SixStringSyn.RPGToolkit2D.Tests.Editor.Core
             AssertCreated<QuestDefinition>("Quest.asset");
             AssertCreated<DialogueDefinition>("Dialogue.asset");
             AssertCreated<AbilityDefinition>("Ability.asset");
+            AssertCreated<StatDefinition>("Stat.asset");
+            AssertCreated<ResourceDefinition>("Resource.asset");
+            AssertCreated<ExperienceCurveDefinition>("ExperienceCurve.asset");
         }
 
         [Test]
