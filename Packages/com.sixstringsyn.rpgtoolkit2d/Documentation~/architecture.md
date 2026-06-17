@@ -74,3 +74,16 @@ Runtime systems should be implemented in `Runtime`, Unity Editor-only tools in `
 - Write tests for deterministic core logic and editor validation workflows when each system is added.
 - Name files after the primary type they contain.
 - Use PascalCase for public types, methods, and properties; camelCase for locals and parameters; and `_camelCase` for private instance fields.
+
+## Phase 1 Assembly Layout
+
+The Phase 1 package foundation defines four assemblies:
+
+| Assembly | Path | Purpose |
+| --- | --- | --- |
+| `SixStringSyn.RPGToolkit2D.Runtime` | `Runtime/com.sixstringsyn.rpgtoolkit2d.runtime.asmdef` | Runtime and core code available to player builds. |
+| `SixStringSyn.RPGToolkit2D.Editor` | `Editor/com.sixstringsyn.rpgtoolkit2d.editor.asmdef` | Editor-only tooling that references the runtime assembly. |
+| `SixStringSyn.RPGToolkit2D.Tests.Runtime` | `Tests/Runtime/com.sixstringsyn.rpgtoolkit2d.tests.runtime.asmdef` | Runtime/play mode test code that references runtime code. |
+| `SixStringSyn.RPGToolkit2D.Tests.Editor` | `Tests/Editor/com.sixstringsyn.rpgtoolkit2d.tests.editor.asmdef` | Editor test code that references runtime and editor code. |
+
+The editor assembly is constrained to the Unity Editor platform so editor-only APIs are not included in player builds. Runtime code must not reference editor assemblies.

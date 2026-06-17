@@ -1,0 +1,14 @@
+{
+  "name": "SixStringSyn.RPGToolkit2D.Runtime",
+  "rootNamespace": "SixStringSyn.RPGToolkit2D.Runtime",
+  "references": [],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

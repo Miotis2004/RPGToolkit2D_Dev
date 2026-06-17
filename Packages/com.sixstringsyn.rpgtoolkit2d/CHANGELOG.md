@@ -5,6 +5,8 @@ All notable changes to RPG Toolkit 2D will be documented in this file.
 ## [0.1.0] - 2026-06-17
 
 ### Added
+
+- Created the Phase 1 Unity package shell with `package.json`, README, MIT license, package folders, assembly definitions, placeholder dashboard, package validation utility, and editor foundation tests.
 - Recorded Phase 0 repository and package audit decisions.
 - Confirmed the Unity development host uses Unity `6000.5.0f1`, which is Unity 6-compatible.
 - Established `com.sixstringsyn.rpgtoolkit2d` as the Unity Package Manager identifier.
