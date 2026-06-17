@@ -3,6 +3,14 @@
 All notable changes to RPG Toolkit 2D will be documented in this file.
 
 ## [0.1.0]
+
+### Phase 5 - Save and Load System
+
+- Added JSON save game containers, metadata, slot file management, contributor registration, and migration hooks.
+- Added inventory and character save contributors plus quest, world, and scene placeholder save data models.
+- Added a read-only Save Data Debugger editor window for enumerating save slots.
+- Added runtime and editor tests for serialization, graceful failures, version mismatch handling, and slot enumeration.
+
 ### Added
 
 - Added Phase 4 item definition fields, item instances, inventory containers, equipment validation, pickup components, inventory save data, item database window, and runtime tests.

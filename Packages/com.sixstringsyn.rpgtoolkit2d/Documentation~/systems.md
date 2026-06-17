@@ -172,3 +172,49 @@ Add `ItemPickup` to a scene GameObject, assign an `ItemDefinition`, and set the 
 ### Save and Load
 
 `InventorySaveData.FromInventory` captures item IDs, quantities, and durability. `ToInventory` rebuilds an inventory by resolving saved `RPGId` values back to `ItemDefinition` assets. Projects can plug in `RPGDatabase<ItemDefinition>` or another content service as the resolver.
+
+## Save and Load System
+
+Phase 5 introduces a JSON save/load foundation designed around save slots and per-system contributors. `SaveGameService` captures a `GameSaveData` container with metadata and each registered system payload. `SaveSlotService` writes and reads that JSON from named slot files under `Application.persistentDataPath/RPGToolkit2D/Saves` by default.
+
+### Save Metadata
+
+Each save includes high-level metadata for slot selection UI and debugging:
+
+- save format version
+- package version
+- created and updated UTC timestamps
+- playtime seconds
+- active scene name
+
+The internal JSON field names may change before `1.0.0`, so projects should treat the format as toolkit-owned and use the save APIs instead of hand-editing fields.
+
+### Save Contributors
+
+Systems participate in saves by implementing `ISaveContributor`. Contributors expose a stable `SystemId`, return JSON from `CaptureJson`, and restore themselves from `RestoreJson`.
+
+```csharp
+var saveService = new SaveGameService();
+saveService.Register(new InventorySaveContributor(
+    () => playerInventory,
+    restored => playerInventory = restored,
+    id => itemDatabase.TryGet(id, out var item) ? item : null,
+    playerInventory.Capacity));
+
+var slots = new SaveSlotService(saveService);
+slots.Save("slot1", saveService.Capture(playtimeSeconds, "Town"));
+```
+
+The package includes contributors and data models for inventory and character state. Quest, world, and scene state save data classes are placeholders so projects can begin wiring flags, completed quests, visited scenes, and consumed scene objects without waiting for later gameplay phases.
+
+### Loading and Failure Handling
+
+`SaveSlotService.Load` returns a `SaveResult` instead of throwing for normal failure cases. Missing slots, unreadable files, and corrupted JSON fail gracefully so games can display a recovery message or ignore the slot.
+
+### Migration Guidance
+
+`SaveGameService` checks the save version before restore. Register `ISaveMigration` implementations to upgrade older save data to `SaveConstants.CurrentSaveVersion`. Until a migration exists for a version mismatch, restore fails safely instead of applying unknown data.
+
+### Save Data Debugger
+
+Open **Tools > RPG Toolkit > Save Data Debugger** to inspect available save slots, their paths, scene names, versions, and update timestamps. The debugger is intentionally read-only in Phase 5.
