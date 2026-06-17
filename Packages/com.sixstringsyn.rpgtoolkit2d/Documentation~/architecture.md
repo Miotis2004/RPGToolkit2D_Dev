@@ -87,3 +87,15 @@ The Phase 1 package foundation defines four assemblies:
 | `SixStringSyn.RPGToolkit2D.Tests.Editor` | `Tests/Editor/com.sixstringsyn.rpgtoolkit2d.tests.editor.asmdef` | Editor test code that references runtime and editor code. |
 
 The editor assembly is constrained to the Unity Editor platform so editor-only APIs are not included in player builds. Runtime code must not reference editor assemblies.
+
+## Phase 2 Core Data Model
+
+Phase 2 adds shared runtime primitives that every RPG system can reuse.
+
+- `RPGId` is a serializable, stable identifier wrapper used to reference content definitions across systems and save data.
+- `RPGObject` is the base `ScriptableObject` definition type. It stores an `RPGId`, display name, description, and shared tags.
+- `RPGTag` stores normalized content labels, while `RPGTagQuery` provides common has-one, has-any, and has-all checks.
+- `RPGDatabase<T>` indexes definition assets by `RPGId` and validates content collections for empty or duplicate identifiers.
+- `RPGValidationResult` and `RPGValidationMessage` provide runtime-safe diagnostics that editor tools can display without coupling core code to UnityEditor APIs.
+
+The initial base content definitions are `CharacterDefinition`, `ItemDefinition`, `QuestDefinition`, `DialogueDefinition`, and `AbilityDefinition`. Each can be created through **Assets > Create > RPG Toolkit** menu entries.
