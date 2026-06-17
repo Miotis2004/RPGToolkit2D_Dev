@@ -1,0 +1,17 @@
+{
+  "name": "com.sixstringsyn.rpgtoolkit2d",
+  "version": "0.1.0",
+  "displayName": "RPG Toolkit 2D",
+  "description": "A reusable Unity 6 package for building data-driven 2D RPGs with runtime systems, editor tooling, samples, tests, and documentation.",
+  "unity": "6000.0",
+  "author": {
+    "name": "Six String Syn"
+  },
+  "license": "MIT",
+  "keywords": [
+    "rpg",
+    "2d",
+    "toolkit",
+    "unity"
+  ]
+}

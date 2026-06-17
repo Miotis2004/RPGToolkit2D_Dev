@@ -1,0 +1,18 @@
+{
+  "name": "SixStringSyn.RPGToolkit2D.Editor",
+  "rootNamespace": "SixStringSyn.RPGToolkit2D.Editor",
+  "references": [
+    "SixStringSyn.RPGToolkit2D.Runtime"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

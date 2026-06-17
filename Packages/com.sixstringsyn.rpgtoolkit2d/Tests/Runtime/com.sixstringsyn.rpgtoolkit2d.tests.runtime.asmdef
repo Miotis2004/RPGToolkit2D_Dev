@@ -1,0 +1,19 @@
+{
+  "name": "SixStringSyn.RPGToolkit2D.Tests.Runtime",
+  "rootNamespace": "SixStringSyn.RPGToolkit2D.Tests.Runtime",
+  "references": [
+    "SixStringSyn.RPGToolkit2D.Runtime"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false,
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}

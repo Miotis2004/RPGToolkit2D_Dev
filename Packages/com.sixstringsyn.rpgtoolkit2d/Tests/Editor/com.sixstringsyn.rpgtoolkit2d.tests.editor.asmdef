@@ -1,0 +1,22 @@
+{
+  "name": "SixStringSyn.RPGToolkit2D.Tests.Editor",
+  "rootNamespace": "SixStringSyn.RPGToolkit2D.Tests.Editor",
+  "references": [
+    "SixStringSyn.RPGToolkit2D.Runtime",
+    "SixStringSyn.RPGToolkit2D.Editor"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false,
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}
