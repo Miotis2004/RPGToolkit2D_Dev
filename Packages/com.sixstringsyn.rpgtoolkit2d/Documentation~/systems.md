@@ -239,3 +239,36 @@ Phase 6 standardizes player-facing interactions around `IInteractable`. NPCs, pi
 `SceneTransitionRequest` carries the target scene name, optional spawn point ID, and whether callers want to save before moving scenes. `SceneTransitionService` raises transition requests for project loading screens, fade controllers, save hooks, or direct scene loading adapters. Add `SpawnPoint` to destination scene objects and assign stable IDs such as `default`, `north_gate`, or `dungeon_exit`.
 
 Validate interactables before shipping: labels should be present for prompt UI, and doors must have a non-empty target scene name.
+
+## Dialogue System and Graph Editor
+
+Phase 7 adds data-driven branching dialogue. `DialogueDefinition` assets contain serializable nodes, choices, conditions, and commands that can be authored directly or through **Tools > RPG Toolkit > Dialogue Graph Editor**.
+
+### Node Types
+
+- `Entry` nodes are valid conversation start points.
+- `Line` nodes display speaker text and may offer choices or continue to a next node.
+- `Exit` nodes end the active `DialogueRunner` session.
+
+### Choices, Conditions, and Commands
+
+Choices link to target nodes and can include conditions. The built-in `DialogueConditionEvaluator` reads string values from `IDialogueContext` and supports existence, equality, inequality, and numeric or string comparisons. Commands are lightweight name/argument payloads raised by `DialogueRunner.CommandExecuted` so games can grant items, set quest flags, play animations, or run project-specific scripting.
+
+```csharp
+var context = new DictionaryDialogueContext();
+context.Set("has_key", "true");
+runner.CommandExecuted += command => Debug.Log(command.Name);
+runner.Start(dialogueDefinition, context);
+```
+
+### Runtime Presentation
+
+`DialogueRunner` owns deterministic traversal and exposes `CurrentNode`, `AvailableChoices`, `Continue`, and `SelectChoice`. Implement `IDialoguePresenter` on a UI adapter to display lines and hide the dialogue panel when the runner ends. `NPCDialogueAdapter` listens to `NPCInteraction.Interacted` and starts the assigned `DialogueDefinition`, allowing scene NPCs to launch conversations without coupling the toolkit to a specific UI prefab.
+
+### Authoring Workflow
+
+1. Create or select a `DialogueDefinition` asset.
+2. Open **Tools > RPG Toolkit > Dialogue Graph Editor**.
+3. Add line and exit nodes, assign speaker/text content, and link nodes with `NextNodeId` or choices.
+4. Use the editor validation button, or call `ValidateGraph`, to find empty graphs and missing links.
+5. Assign the dialogue asset to an `NPCInteraction` and add an `NPCDialogueAdapter` to start it from interaction.
