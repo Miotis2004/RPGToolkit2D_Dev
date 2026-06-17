@@ -4,6 +4,12 @@ All notable changes to RPG Toolkit 2D will be documented in this file.
 
 ## [0.1.0]
 
+### Phase 6 - Interaction and Scene Transition Systems
+
+- Added shared interactable contracts, priority selection, prompt hooks, trigger/overlap/raycast detection support, NPC, pickup, door, and trigger interactable components.
+- Added scene transition requests, a transition service, spawn points, validation helpers, runtime tests, and documentation.
+
+
 ### Phase 5 - Save and Load System
 
 - Added JSON save game containers, metadata, slot file management, contributor registration, and migration hooks.

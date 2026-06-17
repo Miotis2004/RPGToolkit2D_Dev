@@ -218,3 +218,24 @@ The package includes contributors and data models for inventory and character st
 ### Save Data Debugger
 
 Open **Tools > RPG Toolkit > Save Data Debugger** to inspect available save slots, their paths, scene names, versions, and update timestamps. The debugger is intentionally read-only in Phase 5.
+
+## Interactions and Scene Transitions
+
+Phase 6 standardizes player-facing interactions around `IInteractable`. NPCs, pickups, doors, and trigger-style objects expose a label, priority, availability check, and interaction method so projects can route keyboard, gamepad, touch, or custom input through one flow.
+
+### Interaction Detection
+
+`InteractionDetector` can maintain candidates from 2D trigger callbacks, scan an overlap circle, or raycast in a facing direction. It selects the highest-priority interactable that currently passes `CanInteract` and notifies optional prompt UI through `IInteractionPrompt`.
+
+### Built-in Interactables
+
+- `NPCInteraction` references an optional `CharacterDefinition` and `DialogueDefinition`, then raises an event for dialogue or quest systems.
+- `PickupInteraction` adapts an `ItemPickup` so interacting with it collects into the interactor's `InventoryComponent`.
+- `DoorInteraction` creates a `SceneTransitionRequest` for a target scene and spawn point.
+- `TriggerInteraction` is a generic event-based interactable for switches, cutscenes, and project-specific logic.
+
+### Scene Transitions and Spawn Points
+
+`SceneTransitionRequest` carries the target scene name, optional spawn point ID, and whether callers want to save before moving scenes. `SceneTransitionService` raises transition requests for project loading screens, fade controllers, save hooks, or direct scene loading adapters. Add `SpawnPoint` to destination scene objects and assign stable IDs such as `default`, `north_gate`, or `dungeon_exit`.
+
+Validate interactables before shipping: labels should be present for prompt UI, and doors must have a non-empty target scene name.
