@@ -2,7 +2,11 @@
 
 All notable changes to RPG Toolkit 2D will be documented in this file.
 
-## [0.1.0] - 2026-06-17
+## [0.1.0]
+### Added
+
+- Added Phase 4 item definition fields, item instances, inventory containers, equipment validation, pickup components, inventory save data, item database window, and runtime tests.
+ - 2026-06-17
 
 ### Added
 
