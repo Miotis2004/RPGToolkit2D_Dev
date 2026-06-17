@@ -6,6 +6,7 @@ All notable changes to RPG Toolkit 2D will be documented in this file.
 
 ### Added
 
+- Implemented the Phase 2 core data model with stable RPG IDs, base definition assets, tags, validation diagnostics, generic definition databases, duplicate ID detection, tests, and shared systems documentation.
 - Created the Phase 1 Unity package shell with `package.json`, README, MIT license, package folders, assembly definitions, placeholder dashboard, package validation utility, and editor foundation tests.
 - Recorded Phase 0 repository and package audit decisions.
 - Confirmed the Unity development host uses Unity `6000.5.0f1`, which is Unity 6-compatible.
