@@ -110,3 +110,65 @@ Example authoring patterns:
 - If a resource maximum is not expected, confirm the resource's maximum stat is present in the character stat template.
 - If characters never level up, confirm the character references an `ExperienceCurveDefinition` with increasing total XP thresholds.
 - If a conditional modifier does not apply, confirm the stat block context tags contain the required tag.
+
+## Items, Inventory, Equipment, and Pickups
+
+Phase 4 adds the first end-to-end playable item workflow: authored item definitions can be collected from scene pickups, placed in runtime inventories, equipped into validated slots, used through extension actions, and converted to save data.
+
+### Item Definitions
+
+Create items from **Assets > Create > RPG Toolkit > Item Definition**. `ItemDefinition` now includes:
+
+- Display name, description, and tags inherited from `RPGObject`.
+- Icon for inventory UI adapters.
+- Maximum stack size. Values greater than one make an item stackable.
+- Rarity: common, uncommon, rare, epic, or legendary.
+- Item type: generic, consumable, weapon, armor, or quest item.
+- Optional allowed equipment slot IDs.
+- Optional `ItemUseAction` extension asset.
+
+Recommended categories:
+
+- **Consumables:** stackable items with an `ItemUseAction` that applies healing, buffs, keys, or custom effects.
+- **Weapons and armor:** quantity one items with one or more allowed equipment slot IDs.
+- **Quest items:** usually non-stackable or carefully stacked items that quests can query by item ID.
+- **Generic items:** crafting ingredients, valuables, or miscellaneous loot.
+
+### Item Instances
+
+`ItemInstance` represents mutable runtime state for a definition. It stores quantity, durability, generated stat modifiers, and string-based custom state for game-specific data. Keep authored fields on `ItemDefinition` and per-copy fields on `ItemInstance`.
+
+### Inventory Containers
+
+`InventoryContainer` is a deterministic runtime model with fixed capacity slots. It supports:
+
+- Add with automatic stack filling and overflow reporting.
+- Remove by item definition and quantity.
+- Move, swap, merge, and split operations.
+- Count and contains queries.
+- `Changed` and `SlotChanged` events for UI adapters.
+
+```csharp
+var inventory = new InventoryContainer(20);
+var added = inventory.Add(potionDefinition, 3);
+if (inventory.Contains(potionDefinition, 1))
+{
+    inventory.Remove(potionDefinition, 1);
+}
+```
+
+### Equipment
+
+`EquipmentSlotDefinition` defines slot IDs such as `main_hand`, `off_hand`, `head`, or `body`. `EquipmentContainer` validates an item before equipping it: the item must have quantity one and its definition must either allow the target slot ID or leave the allowed slot list empty for project-defined universal equipment.
+
+### Item Use Extension Points
+
+Create custom use behavior by deriving from `ItemUseAction` and assigning the action asset to an item definition. Use `CanUse` for validation and `Use` to mutate game state. The `user` and `context` arguments are deliberately generic so projects can pass character instances, MonoBehaviours, combat contexts, or custom service objects without the toolkit forcing a game architecture.
+
+### Pickups
+
+Add `ItemPickup` to a scene GameObject, assign an `ItemDefinition`, and set the quantity. Call `Collect(InventoryContainer)` or `Collect(InventoryComponent)` from your interaction code. The pickup adds as many items as possible and reduces its remaining quantity; by default it destroys its GameObject when fully collected.
+
+### Save and Load
+
+`InventorySaveData.FromInventory` captures item IDs, quantities, and durability. `ToInventory` rebuilds an inventory by resolving saved `RPGId` values back to `ItemDefinition` assets. Projects can plug in `RPGDatabase<ItemDefinition>` or another content service as the resolver.
