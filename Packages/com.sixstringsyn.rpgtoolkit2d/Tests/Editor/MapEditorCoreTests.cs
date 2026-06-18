@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using System.Linq;
 using SixStringSyn.RPGToolkit2D.Runtime.Maps;
 using UnityEditor;
 using UnityEngine;
@@ -43,6 +44,22 @@ namespace SixStringSyn.RPGToolkit2D.Tests.Editor
 
             Assert.IsTrue(map.EraseTile(layer.layerId, Vector2Int.zero));
             Assert.IsNull(map.GetLayerTile(layer.layerId, Vector2Int.zero));
+        }
+
+        [Test]
+        public void ZoneCreationEditingAndValidationSupportOverlayPainting()
+        {
+            var map = ScriptableObject.CreateInstance<RPGMapDefinition>();
+            map.Configure(new Vector2Int(6, 6));
+
+            Undo.RecordObject(map, "Add Encounter Zone");
+            var zone = map.AddZone("Forest Encounter", RPGMapZoneKind.Encounter, new RectInt(1, 1, 2, 2), "slimes");
+            Assert.AreEqual("slimes", zone.payloadId);
+
+            Assert.IsTrue(map.PaintZoneCell(zone.zoneId, new Vector2Int(4, 4)));
+            Assert.IsTrue(map.GetZonesAt(new Vector2Int(4, 4), RPGMapZoneKind.Encounter).Any());
+            Assert.IsTrue(map.EraseZoneCell(zone.zoneId, new Vector2Int(1, 1)));
+            Assert.IsFalse(map.ValidateMap().Messages.Any(message => message.Code == "RPG_MAP_ZONE_OUT_OF_BOUNDS"));
         }
 
         [Test]

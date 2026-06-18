@@ -9,6 +9,7 @@ using UnityEngine;
 namespace SixStringSyn.RPGToolkit2D.Editor.Windows
 {
     public enum RPGMapEditorTool { Select, Pencil, Erase, RectangleFill, FloodFill, ReplaceTile, Stamp }
+    public enum RPGMapOverlayMode { Tiles, Collision, Trigger, Encounter, Weather, Lighting, Region, Spawn, Metadata }
 
     public sealed class MapEditorWindow : EditorWindow
     {
@@ -16,6 +17,8 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Windows
         private RPGTileDefinition _selectedTile;
         private string _activeLayerId;
         private RPGMapEditorTool _tool = RPGMapEditorTool.Pencil;
+        private RPGMapOverlayMode _overlayMode = RPGMapOverlayMode.Tiles;
+        private string _activeZoneId;
         private Vector2 _scroll;
         private Vector2 _pan;
         private float _zoom = 1f;
@@ -48,10 +51,11 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Windows
                 if (nextMap != _map) SelectMap(nextMap);
                 if (GUILayout.Button("New Map", EditorStyles.toolbarButton, GUILayout.Width(80))) CreateMapAsset();
                 _tool = (RPGMapEditorTool)EditorGUILayout.EnumPopup(_tool, EditorStyles.toolbarPopup, GUILayout.Width(120));
+                _overlayMode = (RPGMapOverlayMode)EditorGUILayout.EnumPopup(_overlayMode, EditorStyles.toolbarPopup, GUILayout.Width(115));
                 GUILayout.Label("Zoom", GUILayout.Width(36));
                 _zoom = GUILayout.HorizontalSlider(_zoom, 0.35f, 3f, GUILayout.Width(120));
                 if (GUILayout.Button("Validate", EditorStyles.toolbarButton, GUILayout.Width(80))) RefreshValidation();
-                if (GUILayout.Button("Docs", EditorStyles.toolbarButton, GUILayout.Width(50))) Application.OpenURL("https://github.com/SixStringSyn/RPGToolkit2D/blob/main/MAPS_DEV.md#phase-4-visual-map-editor-core");
+                if (GUILayout.Button("Docs", EditorStyles.toolbarButton, GUILayout.Width(50))) Application.OpenURL("https://github.com/SixStringSyn/RPGToolkit2D/blob/main/MAPS_DEV.md#phase-5-zone-collision-trigger-and-metadata-painting");
             }
         }
 
@@ -91,6 +95,7 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Windows
             var origin = rect.min + _pan + new Vector2(20f, 20f);
             DrawGrid(rect, origin, cell);
             DrawTiles(rect, origin, cell);
+            DrawOverlays(rect, origin, cell);
             HandleCanvasInput(rect, origin, cell, Event.current);
             if (_hoverCell.x >= 0) DrawCell(rect, origin, cell, _hoverCell, new Color(1f, 0.85f, 0.1f, 0.35f));
             if (_selectedTile != null && rect.Contains(Event.current.mousePosition)) GUI.Label(new Rect(Event.current.mousePosition + new Vector2(16, 16), new Vector2(180, 20)), $"{_selectedTile.tileId}");
@@ -107,6 +112,8 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Windows
                 if (EditorGUI.EndChangeCheck()) { Undo.RecordObject(_map, "Set Map Tileset"); _map.SetTileset(tileset); SaveMap(); }
                 DrawTilePalette();
                 DrawLayerInspector();
+                DrawZoneInspector();
+                DrawCellMetadataInspector();
                 DrawValidationPanel();
             }
             EditorGUILayout.EndScrollView();
@@ -133,6 +140,56 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Windows
             layer.kind = (RPGMapLayerKind)EditorGUILayout.EnumPopup("Kind", layer.kind);
             layer.opacity = EditorGUILayout.Slider("Opacity", layer.opacity, 0f, 1f);
             if (EditorGUI.EndChangeCheck()) SaveMap();
+        }
+
+        private void DrawZoneInspector()
+        {
+            GUILayout.Space(6); GUILayout.Label("Zones & Gameplay Overlays", EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox("Select an overlay, then use Rectangle Fill to create a zone or Pencil/Erase to expand or shrink the active zone.", MessageType.Info);
+            foreach (var zone in _map.Zones)
+            {
+                if (zone == null) continue;
+                using (new EditorGUILayout.HorizontalScope(EditorStyles.helpBox))
+                {
+                    if (GUILayout.Toggle(_activeZoneId == zone.zoneId, $"{zone.zoneId} ({zone.kind})", GUI.skin.button)) _activeZoneId = zone.zoneId;
+                    if (GUILayout.Button("X", GUILayout.Width(22))) { Undo.RecordObject(_map, "Remove Zone"); _map.RemoveZone(zone.zoneId); if (_activeZoneId == zone.zoneId) _activeZoneId = null; SaveMap(); return; }
+                }
+            }
+            if (GUILayout.Button("Add Zone From Overlay"))
+            {
+                Undo.RecordObject(_map, "Add Map Zone");
+                var kind = OverlayToZoneKind(_overlayMode);
+                var zone = _map.AddZone(kind.ToString(), kind, new RectInt(Mathf.Max(0, _hoverCell.x), Mathf.Max(0, _hoverCell.y), 1, 1));
+                _activeZoneId = zone.zoneId;
+                SaveMap();
+            }
+            var active = _map.FindZone(_activeZoneId);
+            if (active == null) return;
+            EditorGUI.BeginChangeCheck();
+            active.displayName = EditorGUILayout.TextField("Name", active.displayName);
+            active.kind = (RPGMapZoneKind)EditorGUILayout.EnumPopup("Kind", active.kind);
+            active.bounds = EditorGUILayout.RectIntField("Bounds", active.bounds);
+            active.payloadId = EditorGUILayout.TextField("Payload/Event ID", active.payloadId);
+            active.priority = EditorGUILayout.IntField("Priority", active.priority);
+            var tags = EditorGUILayout.TextField("Tags", string.Join(",", active.tags ?? Enumerable.Empty<string>()));
+            if (EditorGUI.EndChangeCheck())
+            {
+                active.tags = tags.Split(',').Select(tag => tag.Trim()).Where(tag => !string.IsNullOrWhiteSpace(tag)).ToList();
+                SaveMap();
+            }
+        }
+
+        private void DrawCellMetadataInspector()
+        {
+            if (_hoverCell.x < 0) return;
+            GUILayout.Space(6); GUILayout.Label("Selected Cell Metadata", EditorStyles.boldLabel);
+            var cell = _map.GetCellMetadata(_hoverCell);
+            EditorGUILayout.LabelField("Blocked", cell.blocked ? "Yes" : "No");
+            EditorGUILayout.LabelField("Tiles", string.Join(", ", cell.tiles.Select(tile => tile.tileId)));
+            EditorGUILayout.LabelField("Zones", string.Join(", ", cell.zones.Select(zone => $"{zone.zoneId}:{zone.payloadId}")));
+            EditorGUILayout.LabelField("Objects", string.Join(", ", cell.objects.Select(obj => obj.objectId)));
+            foreach (var entry in cell.metadata.OrderByDescending(entry => entry.priority))
+                EditorGUILayout.LabelField($"{entry.scope}/{entry.ownerId}", $"{entry.key}={entry.value}");
         }
 
         private void DrawValidationPanel()
@@ -189,6 +246,32 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Windows
             }
         }
 
+        private void DrawOverlays(Rect rect, Vector2 origin, float cell)
+        {
+            if (_overlayMode == RPGMapOverlayMode.Tiles) return;
+            foreach (var zone in _map.Zones)
+            {
+                if (zone == null || !OverlayMatchesZone(_overlayMode, zone.kind)) continue;
+                var zoneRect = new Rect(origin.x + zone.bounds.x * cell, origin.y + zone.bounds.y * cell, zone.bounds.width * cell, zone.bounds.height * cell);
+                EditorGUI.DrawRect(zoneRect, ZoneColor(zone.kind));
+                GUI.Label(zoneRect, $"{zone.zoneId}\n{zone.payloadId}", EditorStyles.whiteMiniLabel);
+            }
+            if (_overlayMode == RPGMapOverlayMode.Collision)
+            {
+                for (var y = 0; y < _map.Size.y; y++)
+                    for (var x = 0; x < _map.Size.x; x++)
+                    {
+                        var position = new Vector2Int(x, y);
+                        if (_map.IsBlocked(position)) EditorGUI.DrawRect(CellRect(origin, cell, position), new Color(1f, 0f, 0f, .25f));
+                    }
+            }
+            if (_overlayMode == RPGMapOverlayMode.Metadata && _hoverCell.x >= 0)
+            {
+                var metadata = _map.GetCellMetadata(_hoverCell);
+                GUI.Label(new Rect(origin.x, origin.y + _map.Size.y * cell + 4f, 300f, 40f), $"Metadata entries: {metadata.metadata.Count} | Zones: {metadata.zones.Count} | Blocked: {metadata.blocked}");
+            }
+        }
+
         private static Rect TextureCoords(Sprite sprite)
         {
             var r = sprite.textureRect;
@@ -209,9 +292,11 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Windows
 
         private void ApplyTool(Vector2Int cell, bool finalDrag)
         {
-            if (ActiveLayer == null || cell.x < 0 || cell.y < 0 || cell.x >= _map.Size.x || cell.y >= _map.Size.y) return;
-            if ((_tool == RPGMapEditorTool.Pencil || _tool == RPGMapEditorTool.RectangleFill || _tool == RPGMapEditorTool.FloodFill || _tool == RPGMapEditorTool.ReplaceTile || _tool == RPGMapEditorTool.Stamp) && _selectedTile == null) return;
+            if ((_overlayMode == RPGMapOverlayMode.Tiles && ActiveLayer == null) || cell.x < 0 || cell.y < 0 || cell.x >= _map.Size.x || cell.y >= _map.Size.y) return;
+            var needsTile = _overlayMode == RPGMapOverlayMode.Tiles || _overlayMode == RPGMapOverlayMode.Collision;
+            if (needsTile && (_tool == RPGMapEditorTool.Pencil || _tool == RPGMapEditorTool.RectangleFill || _tool == RPGMapEditorTool.FloodFill || _tool == RPGMapEditorTool.ReplaceTile || _tool == RPGMapEditorTool.Stamp) && _selectedTile == null) return;
             Undo.RecordObject(_map, $"Map {_tool}");
+            if (_overlayMode == RPGMapOverlayMode.Tiles)
             switch (_tool)
             {
                 case RPGMapEditorTool.Pencil: _map.PaintTile(ActiveLayer.layerId, cell, _selectedTile.tileId); break;
@@ -221,7 +306,26 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Windows
                 case RPGMapEditorTool.ReplaceTile: if (!finalDrag) _map.ReplaceTile(ActiveLayer.layerId, _map.GetLayerTile(ActiveLayer.layerId, cell)?.tileId, _selectedTile.tileId); break;
                 case RPGMapEditorTool.Stamp: _map.PaintTile(ActiveLayer.layerId, cell, _selectedTile.tileId); break;
             }
+            ApplyOverlayTool(cell, finalDrag);
             SaveMap();
+        }
+
+        private void ApplyOverlayTool(Vector2Int cell, bool finalDrag)
+        {
+            if (_overlayMode == RPGMapOverlayMode.Tiles || _overlayMode == RPGMapOverlayMode.Metadata) return;
+            if (_overlayMode == RPGMapOverlayMode.Collision)
+            {
+                var layer = _map.Layers.FirstOrDefault(candidate => candidate != null && candidate.kind == RPGMapLayerKind.Collision) ?? _map.AddLayer("Collision", RPGMapLayerKind.Collision);
+                if (_tool == RPGMapEditorTool.Erase) _map.EraseTile(layer.layerId, cell);
+                else if (_selectedTile != null) _map.PaintTile(layer.layerId, cell, _selectedTile.tileId);
+                return;
+            }
+            var kind = OverlayToZoneKind(_overlayMode);
+            var zone = _map.FindZone(_activeZoneId) ?? _map.AddZone(kind.ToString(), kind, new RectInt(cell.x, cell.y, 1, 1));
+            _activeZoneId = zone.zoneId;
+            if (_tool == RPGMapEditorTool.Erase) _map.EraseZoneCell(zone.zoneId, cell);
+            else if (_tool == RPGMapEditorTool.RectangleFill && finalDrag) zone.bounds = Rect.MinMaxRect(Mathf.Min(_dragStart.x, cell.x), Mathf.Min(_dragStart.y, cell.y), Mathf.Max(_dragStart.x, cell.x) + 1, Mathf.Max(_dragStart.y, cell.y) + 1).ToRectInt();
+            else if (_tool == RPGMapEditorTool.Pencil) _map.PaintZoneCell(zone.zoneId, cell);
         }
 
         private void HandleShortcuts(Event evt)
@@ -236,6 +340,14 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Windows
 
         private static Rect CellRect(Vector2 origin, float cell, Vector2Int position) => new Rect(origin.x + position.x * cell, origin.y + position.y * cell, cell, cell);
         private static void DrawCell(Rect clip, Vector2 origin, float cell, Vector2Int position, Color color) => EditorGUI.DrawRect(CellRect(origin, cell, position), color);
+        private static RPGMapZoneKind OverlayToZoneKind(RPGMapOverlayMode mode) => mode switch { RPGMapOverlayMode.Encounter => RPGMapZoneKind.Encounter, RPGMapOverlayMode.Weather => RPGMapZoneKind.Weather, RPGMapOverlayMode.Lighting => RPGMapZoneKind.Lighting, RPGMapOverlayMode.Spawn => RPGMapZoneKind.Spawn, _ => RPGMapZoneKind.Region };
+        private static bool OverlayMatchesZone(RPGMapOverlayMode mode, RPGMapZoneKind kind)
+        {
+            if (mode == RPGMapOverlayMode.Metadata) return true;
+            if (mode == RPGMapOverlayMode.Collision || mode == RPGMapOverlayMode.Tiles) return false;
+            return mode == RPGMapOverlayMode.Trigger || mode == RPGMapOverlayMode.Region ? kind == RPGMapZoneKind.Region : OverlayToZoneKind(mode) == kind;
+        }
+        private static Color ZoneColor(RPGMapZoneKind kind) => kind switch { RPGMapZoneKind.Encounter => new Color(.9f, .2f, .9f, .22f), RPGMapZoneKind.Weather => new Color(.2f, .6f, 1f, .22f), RPGMapZoneKind.Lighting => new Color(1f, .85f, .1f, .22f), RPGMapZoneKind.Spawn => new Color(.1f, 1f, .35f, .22f), _ => new Color(.4f, .9f, 1f, .18f) };
     }
 
     internal static class RectExtensions
