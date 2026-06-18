@@ -4,6 +4,10 @@ using SixStringSyn.RPGToolkit2D.Editor.Dashboard;
 using SixStringSyn.RPGToolkit2D.Editor.Foundation;
 using SixStringSyn.RPGToolkit2D.Runtime.Characters;
 using SixStringSyn.RPGToolkit2D.Runtime.Items;
+using SixStringSyn.RPGToolkit2D.Runtime.Data;
+using SixStringSyn.RPGToolkit2D.Runtime.Foundation;
+using SixStringSyn.RPGToolkit2D.Runtime.Maps;
+using SixStringSyn.RPGToolkit2D.Editor;
 using UnityEditor;
 using UnityEngine;
 
@@ -83,6 +87,35 @@ namespace SixStringSyn.RPGToolkit2D.Tests.Editor
 
             Assert.That(entries, Has.Count.GreaterThanOrEqualTo(1));
             Assert.That(System.Linq.Enumerable.Any(entries, entry => entry.Asset == asset), Is.True);
+        }
+
+
+        [Test]
+        public void AuthoringSectionsCoverPhase8MapWorkflowTypes()
+        {
+            var titles = string.Join(",", System.Linq.Enumerable.Select(RPGToolkitAuthoringWorkflow.Sections, section => section.Title));
+            Assert.That(titles, Does.Contain("Maps"));
+            Assert.That(titles, Does.Contain("Tilesets"));
+            Assert.That(titles, Does.Contain("Sprite Sheets"));
+            Assert.That(titles, Does.Contain("Sprite Sheet Profiles"));
+        }
+
+        [Test]
+        public void ProjectWideMapValidationAggregatesBrokenAssetsAndDuplicateIds()
+        {
+            var mapSection = System.Linq.Enumerable.First(RPGToolkitAuthoringWorkflow.Sections, section => section.AssetType == typeof(RPGMapDefinition));
+            var sheetSection = System.Linq.Enumerable.First(RPGToolkitAuthoringWorkflow.Sections, section => section.AssetType == typeof(RPGSpriteSheetAsset));
+            var map = RPGToolkitAuthoringWorkflow.CreateAsset(mapSection, TestFolder) as RPGMapDefinition;
+            var sheet = RPGToolkitAuthoringWorkflow.CreateAsset(sheetSection, TestFolder) as RPGSpriteSheetAsset;
+            sheet.SetId(map.Id);
+            EditorUtility.SetDirty(sheet);
+            AssetDatabase.SaveAssets();
+
+            var report = RPGMapProjectValidationService.ValidateAllMapContent();
+
+            Assert.That(report.Entries, Has.Count.GreaterThanOrEqualTo(2));
+            Assert.That(System.Linq.Enumerable.Any(report.Entries, entry => entry.Message.Code == "RPG_MAP_MISSING_TILESET"), Is.True);
+            Assert.That(System.Linq.Enumerable.Any(report.Entries, entry => entry.Message.Code == "RPG_MAP_ASSET_DUPLICATE_ID"), Is.True);
         }
 
         [Test]

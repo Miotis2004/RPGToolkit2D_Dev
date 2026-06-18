@@ -9,6 +9,7 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Dashboard
         private Vector2 _scroll;
         private string _searchText = string.Empty;
         private int _selectedSection;
+        private RPGMapProjectValidationReport _mapValidationReport;
 
         [MenuItem("Tools/RPG Toolkit/Dashboard")]
         public static void Open()
@@ -100,6 +101,12 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Dashboard
             if (GUILayout.Button("World State Debugger")) global::SixStringSyn.RPGToolkit2D.Editor.Windows.WorldStateDebuggerWindow.Open();
             if (GUILayout.Button("Samples Folder")) EditorUtility.RevealInFinder(RPGToolkitPackageValidator.PackagePath + "/Samples~");
             EditorGUILayout.EndHorizontal();
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("Map Editor")) global::SixStringSyn.RPGToolkit2D.Editor.Windows.MapEditorWindow.Open();
+            if (GUILayout.Button("Tileset Editor")) global::SixStringSyn.RPGToolkit2D.Editor.Windows.TilesetEditorWindow.Open();
+            if (GUILayout.Button("Sprite Sheet Editor")) global::SixStringSyn.RPGToolkit2D.Editor.Windows.SpriteSheetEditorWindow.Open();
+            if (GUILayout.Button("Map Connections")) global::SixStringSyn.RPGToolkit2D.Editor.Windows.MapConnectionBrowserWindow.ShowWindow();
+            EditorGUILayout.EndHorizontal();
             EditorGUILayout.Space();
         }
 
@@ -110,6 +117,31 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Dashboard
             {
                 var type = result.Passed ? MessageType.Info : MessageType.Warning;
                 EditorGUILayout.HelpBox($"{result.RuleName}: {result.Message}", type);
+            }
+
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("Maps, Tilesets, and Sprite Sheets", EditorStyles.boldLabel);
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("Validate All Map Content")) _mapValidationReport = RPGMapProjectValidationService.ValidateAllMapContent();
+            if (GUILayout.Button("Validate Sprite Sheets")) _mapValidationReport = RPGMapProjectValidationService.ValidateSpriteSheets();
+            if (GUILayout.Button("Validate Tilesets")) _mapValidationReport = RPGMapProjectValidationService.ValidateTilesets();
+            if (GUILayout.Button("Validate Maps")) _mapValidationReport = RPGMapProjectValidationService.ValidateMaps();
+            EditorGUILayout.EndHorizontal();
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("Validate Map Graph")) _mapValidationReport = RPGMapProjectValidationService.ValidateMapGraphConnections();
+            if (GUILayout.Button("Report Duplicate IDs")) _mapValidationReport = RPGMapProjectValidationService.ValidateDuplicateAssetIds();
+            if (GUILayout.Button("Repair Safe Issues")) EditorUtility.DisplayDialog("RPG Toolkit Repairs", $"Updated {RPGMapProjectValidationService.RepairSafeMapContent()} asset(s).", "OK");
+            EditorGUILayout.EndHorizontal();
+
+            if (_mapValidationReport == null) return;
+            EditorGUILayout.HelpBox($"Map workflow validation: {_mapValidationReport.ErrorCount} error(s), {_mapValidationReport.WarningCount} warning(s).", _mapValidationReport.Passed ? MessageType.Info : MessageType.Warning);
+            foreach (var entry in _mapValidationReport.Entries)
+            {
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.ObjectField(entry.Asset, typeof(UnityEngine.Object), false);
+                EditorGUILayout.HelpBox($"[{entry.Message.Code}] {entry.Message.Message}", entry.Message.IsError ? MessageType.Error : MessageType.Warning);
+                if (GUILayout.Button("Ping", GUILayout.Width(60f))) EditorGUIUtility.PingObject(entry.Asset);
+                EditorGUILayout.EndHorizontal();
             }
         }
     }

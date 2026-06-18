@@ -9,10 +9,11 @@ Menu path: **Tools > RPG Toolkit > Dashboard**
 The dashboard includes:
 
 - **Quick Start** guidance for validating setup, creating an authoring folder, and opening documentation.
-- **Create RPG Content** cards for characters, items, quests, dialogue, abilities, vendors, loot tables, and NPC definitions.
+- **Create RPG Content** cards for characters, items, quests, dialogue, abilities, vendors, loot tables, NPC definitions, maps, tilesets, sprite sheets, and sprite sheet profiles.
 - **Database Browser** search for authored assets with quick ping/open actions and duplicate RPG ID warnings.
-- **Focused Tools** shortcuts for the Quest Editor, Dialogue Graph Editor, Item Database, Save Data Debugger, World State Debugger, and package samples folder.
+- **Focused Tools** shortcuts for the Quest Editor, Dialogue Graph Editor, Item Database, Save Data Debugger, World State Debugger, Map Editor, Tileset Editor, Sprite Sheet Editor, Map Connections, and package samples folder.
 - **Project Setup and Validation** checks for package foundation files, required packages, recommended sample packages, and the default `Assets/RPGToolkit2D` authoring folder.
+- **Maps, Tilesets, and Sprite Sheets** project-wide validation for sprite sheets, tilesets, maps, map graph connections, duplicate map workflow IDs, and safe repair utilities.
 
 ## Authoring Workflow Quick Start
 
@@ -37,6 +38,10 @@ The dashboard provides creation shortcuts for the common ScriptableObject defini
 | Vendors | `VendorDefinition` | Shops, stock, prices, and buy/sell rules. |
 | Loot Tables | `LootTableDefinition` | Weighted drops for chests, encounters, rewards, and shops. |
 | NPCs | `NPCDefinition` | NPC metadata, dialogue links, relationship hooks, and world-state integration. |
+| Maps | `RPGMapDefinition` | Tile layers, zones, entrances, exits, object placements, and transitions. |
+| Tilesets | `RPGTilesetDefinition` | Tile metadata, collision defaults, source frame references, and palette grouping. |
+| Sprite Sheets | `RPGSpriteSheetAsset` | Source texture frame metadata, tags, groups, and default tile flags. |
+| Sprite Sheet Profiles | `RPGSpriteSheetProfile` | Slicing rules, cell size, ordering, naming, pivots, and pixels per unit. |
 
 ## Database Browser
 
@@ -67,9 +72,17 @@ Use duplicate ID warnings before committing authored content. Stable unique IDs 
 | Combat Tuning Editor | **Tools > RPG Toolkit > Combat Tuning Editor** | Placeholder for combat tuning workflows. |
 | Save Data Debugger | **Tools > RPG Toolkit > Save Data Debugger** | Inspect save slots and serialized save metadata. |
 | World State Debugger | **Tools > RPG Toolkit > World State Debugger** | Inspect and edit world-state keys during play and authoring. |
+| Map Editor | **Tools > RPG Toolkit > Maps > Map Editor** | Author map layers, tiles, objects, zones, entrances, exits, and validation overlays. |
+| Tileset Editor | **Tools > RPG Toolkit > Maps > Tileset Editor** | Generate and inspect tile metadata and palettes from sprite sheet frames. |
+| Sprite Sheet Editor | **Tools > RPG Toolkit > Maps > Sprite Sheet Editor** | Generate and inspect frame metadata from textures and profiles. |
+| Map Connection Browser | **Tools > RPG Toolkit > Maps > Connection Browser** | Review authored exits and map graph validation. |
 
 ## Project Setup Validation
 
 The dashboard runs package foundation validation and project-level checks. Required package checks should be treated as blockers. Recommended package checks are informational until you use samples or integrations that depend on those packages.
 
 When a warning appears, read its message first. The dashboard provides friendly guidance such as creating the default authoring folder or installing recommended Unity packages for sample scenarios.
+
+## Maps, Tilesets, and Sprite Sheets Validation
+
+Use **Validate All Map Content** from the dashboard to aggregate sprite sheet, tileset, map, map graph, cross-asset reference, and duplicate ID diagnostics. Use the narrower validation buttons when fixing one part of the asset chain. Validation rows include the affected asset, a stable diagnostic code, designer-facing guidance, and a **Ping** button for navigating to the asset. **Repair Safe Issues** only performs deterministic cleanup: it fills missing frame/tile IDs, removes null entries, and rebuilds palette ordering by removing missing or duplicate tile references.
