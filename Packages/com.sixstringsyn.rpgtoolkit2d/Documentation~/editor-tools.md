@@ -135,3 +135,35 @@ When a warning appears, read its message first. The dashboard provides friendly 
 ## Maps, Tilesets, and Sprite Sheets Validation
 
 Use **Validate All Map Content** from the dashboard to aggregate sprite sheet, tileset, map, map graph, cross-asset reference, and duplicate ID diagnostics. Use the narrower validation buttons when fixing one part of the asset chain. Validation rows include the affected asset, a stable diagnostic code, designer-facing guidance, and a **Ping** button for navigating to the asset. **Repair Safe Issues** only performs deterministic cleanup: it fills missing frame/tile IDs, removes null entries, and rebuilds palette ordering by removing missing or duplicate tile references.
+
+## Complete Quest Authoring Guide
+
+Open **Tools > RPG Toolkit > Quest Editor** when building quest content. The upgraded Quest Editor is designed so authors can complete the common workflow without bouncing between the Project window and default Inspector.
+
+### 1. Find or create a quest
+
+Use the **Quest Library** search panel to filter quests by display name, RPG ID, or asset path. Click **Create Quest Asset** to add a new `QuestDefinition`, then select it from the list. The selected quest stays in the detail panel for editing, pinging, and Project selection.
+
+### 2. Fill metadata
+
+In **Metadata**, assign a stable RPG ID, display name, description, and tags. Keep IDs stable after shipping because save files and dialogue/event commands can reference quests by ID.
+
+### 3. Author objectives
+
+Use the reorderable **Objectives** list to add, remove, and drag objectives into the desired journal order. Each objective supports its type, description, item reference for collect objectives, target/world-state key, required amount, and optional flag. Prefer explicit target IDs for talk, reach, kill, escort, craft, and custom event objectives so runtime systems can advance them deterministically.
+
+### 4. Add dependencies and conditions
+
+Use **Start Conditions / Dependencies** for prerequisite quests and custom flags. Quest prerequisites become the quest chain view: conditions referencing other quests show which content must be inactive, active, completed, failed, or turned in before this quest starts. Custom flags can mirror world-state keys used by dialogue, events, or map triggers.
+
+### 5. Add rewards and turn-in behavior
+
+Use the reorderable **Rewards** list for item, experience, currency, and custom-action rewards. Item rewards must reference an item; currency rewards should specify the currency ID and quantity; custom actions should use a stable action key handled by your reward receiver. Enable **Auto Turn In** for quests that should grant rewards as soon as all required objectives complete.
+
+### 6. Review quick links
+
+The **Quick Links** area summarizes target/world-state keys and lists linked NPC, Item, and Dialogue assets where references can be inferred. Use **Ping** to jump to related content while wiring quest objectives to NPC IDs, item references, and dialogue quest commands.
+
+### 7. Validate and repair safely
+
+The **Validation** panel groups current diagnostics by severity. Errors block a valid quest, such as missing objectives or item rewards without items. Warnings flag risky content, such as quests without rewards or objectives without target IDs. Use **Repair** for deterministic safe repairs such as regenerating a missing RPG ID. The dashboard Quests card also reports invalid quest counts plus quests missing objectives or rewards.

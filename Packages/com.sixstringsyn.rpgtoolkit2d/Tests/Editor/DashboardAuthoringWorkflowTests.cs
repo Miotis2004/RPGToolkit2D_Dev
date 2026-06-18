@@ -141,6 +141,8 @@ namespace SixStringSyn.RPGToolkit2D.Tests.Editor
             Assert.That(data.AssetCount, Is.GreaterThanOrEqualTo(1));
             Assert.That(data.InvalidAssetCount, Is.GreaterThanOrEqualTo(1));
             Assert.That(data.ValidationMessageCount, Is.GreaterThanOrEqualTo(1));
+            Assert.That(data.QuestMissingObjectiveCount, Is.GreaterThanOrEqualTo(1));
+            Assert.That(data.QuestMissingRewardCount, Is.GreaterThanOrEqualTo(1));
             Assert.That(data.LastValidationSummary, Is.EqualTo("Not validated yet."));
             Assert.That(questSection.SetupHint, Is.Not.Empty);
         }
