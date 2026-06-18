@@ -95,6 +95,51 @@ namespace SixStringSyn.RPGToolkit2D.Tests.Runtime.PhaseMaps
             Assert.AreEqual("overworld", map.ResolveConnection("overworld").connectionId);
         }
 
+
+        [Test]
+        public void ObjectPlacementOperationsProduceSpawnDescriptors()
+        {
+            var map = ScriptableObject.CreateInstance<RPGMapDefinition>();
+            map.Configure(new Vector2Int(8, 8));
+
+            var chest = map.PlaceObject("Starter Chest", RPGMapObjectCategory.Chest, new Vector2Int(2, 3));
+            chest.addressableKey = "objects/chest";
+            chest.worldOffset = new Vector3(0.25f, 0.5f, 0f);
+            chest.rotationEuler = new Vector3(0f, 0f, 90f);
+            chest.persistentStateKey = "chests.starter";
+            chest.metadata.Add(new RPGMapMetadataEntry { key = "loot", value = "potion" });
+
+            Assert.IsTrue(map.MoveObject(chest.objectId, new Vector2Int(4, 5), new Vector3(0.5f, 0f, 0f)));
+            Assert.IsTrue(map.RotateObject(chest.objectId, new Vector3(0f, 0f, 180f)));
+            var copy = map.DuplicateObject(chest.objectId, new Vector2Int(1, 1));
+
+            var descriptors = RPGMapObjectSpawner.BuildSpawnDescriptors(map).ToArray();
+
+            Assert.AreEqual(2, descriptors.Length);
+            Assert.AreEqual("Starter Chest", descriptors.First(descriptor => descriptor.objectId == chest.objectId).displayName);
+            Assert.AreEqual(new Vector3(4.5f, 5f, 0f), descriptors.First(descriptor => descriptor.objectId == chest.objectId).worldPosition);
+            Assert.AreNotEqual(chest.objectId, copy.objectId);
+            Assert.IsTrue(map.RemoveObject(copy.objectId));
+        }
+
+        [Test]
+        public void ExitConnectionResolutionRequiresTargetEntranceWhenSpecified()
+        {
+            var target = ScriptableObject.CreateInstance<RPGMapDefinition>();
+            target.Configure(new Vector2Int(4, 4));
+            target.AddEntrance("south gate", new Vector2Int(1, 0));
+
+            var source = ScriptableObject.CreateInstance<RPGMapDefinition>();
+            source.Configure(new Vector2Int(4, 4));
+            var exit = source.AddExit("north gate", new Vector2Int(1, 3), target, "south_gate", RPGMapTransitionKind.Door);
+
+            var resolution = source.ResolveExitConnection(exit.exitId);
+
+            Assert.IsTrue(resolution.IsResolved);
+            Assert.AreSame(target, resolution.TargetMap);
+            Assert.AreEqual("south_gate", resolution.TargetEntrance.entranceId);
+        }
+
         [Test]
         public void ValidationReportsExpandedMapIssues()
         {
