@@ -346,7 +346,7 @@ Deliverables:
 
 **Exit criteria:** Designers can author progression, factions, loot, and crafting through editor tools with minimal or no coding. The package now includes faction databases with reputation thresholds and runtime conditions, skill tree graph assets with unlock progression, nested weighted loot tables with deterministic simulation hooks, and crafting recipe databases with station metadata and validation-oriented editor windows.
 
-## Phase 6: AI Tooling
+## Phase 6: AI Tooling (Implemented)
 
 **Goal:** Provide commercial-grade AI authoring for enemies, NPCs, bosses, and companions.
 
@@ -367,7 +367,7 @@ Deliverables:
 - Debug visualization during play mode.
 - Reusable action, condition, selector, and sequence nodes.
 
-**Exit criteria:** AI behavior can be authored visually, debugged in play mode, and connected to combat, factions, schedules, and variables.
+**Exit criteria:** AI behavior can be authored visually, debugged in play mode, and connected to combat, factions, schedules, and variables. The package now includes behavior tree assets with selector, sequence, condition, and action nodes; a runtime executor with blackboard defaults and node evaluation tracing; validation for missing roots, duplicate nodes, and broken child links; and an editor window for authoring and play-mode debug previews.
 
 ## Phase 7: RPG Toolkit Game Builder
 
