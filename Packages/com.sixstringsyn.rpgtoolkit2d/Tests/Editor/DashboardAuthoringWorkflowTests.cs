@@ -396,6 +396,41 @@ namespace SixStringSyn.RPGToolkit2D.Tests.Editor
             Assert.That(results, Is.Not.Empty);
             Assert.That(System.Linq.Enumerable.Any(results, result => result.RuleName == "Authoring asset folder"), Is.True);
         }
+
+        [Test]
+        public void Phase10ValidationCenterAggregatesFiltersAndExportsDiagnostics()
+        {
+            var itemSection = System.Linq.Enumerable.First(RPGToolkitAuthoringWorkflow.Sections, section => section.AssetType == typeof(ItemDefinition));
+            var item = RPGToolkitAuthoringWorkflow.CreateAsset(itemSection, TestFolder) as ItemDefinition;
+            SetSerialized(item, "_displayName", string.Empty);
+
+            var report = RPGToolkitValidationCenter.ValidateAllRPGContent();
+            var errors = RPGToolkitValidationCenter.Filter(report, true, false, false, "RPG_ITEM_MISSING_DISPLAY_NAME");
+            var markdown = RPGToolkitValidationCenter.ExportMarkdown(report);
+
+            Assert.That(report.Diagnostics, Has.Count.GreaterThanOrEqualTo(1));
+            Assert.That(System.Linq.Enumerable.Any(errors, diagnostic => diagnostic.Section == itemSection), Is.True);
+            Assert.That(markdown, Does.Contain("# RPG Toolkit Validation Report"));
+            Assert.That(markdown, Does.Contain("RPG_ITEM_MISSING_DISPLAY_NAME"));
+        }
+
+        [Test]
+        public void Phase10ValidationCenterProvidesSafeDuplicateIdRepairPreview()
+        {
+            var characterSection = System.Linq.Enumerable.First(RPGToolkitAuthoringWorkflow.Sections, section => section.AssetType == typeof(CharacterDefinition));
+            var first = RPGToolkitAuthoringWorkflow.CreateAsset(characterSection, TestFolder) as CharacterDefinition;
+            var second = RPGToolkitAuthoringWorkflow.CreateAsset(characterSection, TestFolder) as CharacterDefinition;
+            second.SetId(first.Id);
+            EditorUtility.SetDirty(second);
+            AssetDatabase.SaveAssets();
+
+            var report = RPGToolkitValidationCenter.ValidateSection(characterSection);
+            var repairable = System.Linq.Enumerable.FirstOrDefault(report.Diagnostics, diagnostic => diagnostic.HasRepair && diagnostic.Asset == second);
+
+            Assert.That(repairable, Is.Not.Null);
+            Assert.That(repairable.RepairPreview, Does.Contain("Assign a new generated RPG ID"));
+        }
+
         private static void SetSerialized(Object target, string propertyName, string value)
         {
             var serialized = new SerializedObject(target);
