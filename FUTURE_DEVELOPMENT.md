@@ -142,7 +142,7 @@ Deliverables:
 
 **Exit criteria:** Designers can create a quest, connect it to dialogue, test it in play mode, and inspect quest/variable state. The package now includes dialogue node authoring metadata, quest-update/reward dialogue node types, quest command helpers, designer-facing objective templates, and validated runtime/editor coverage for dialogue-driven quest workflows.
 
-## Phase 3: Event System and Save Framework
+## Phase 3: Event System and Save Framework (Implemented)
 
 **Goal:** Make maps interactive and preserve player progress reliably.
 
@@ -185,7 +185,7 @@ Deliverables:
 - Migration pipeline for post-release data changes.
 - Sample save adapters for variables, quests, inventory, and player position.
 
-**Exit criteria:** Interactive events can modify game state, and that state can be saved, loaded, and migrated across versions.
+**Exit criteria:** Interactive events can modify game state, and that state can be saved, loaded, and migrated across versions. The package now includes RPG Maker-style event assets, a runtime event runner with integration hooks, an editor window for event authoring, multiple save slot helpers, autosave/manual save entry points, cloud save hooks, migrations, and sample save contributors for world variables, quests, inventory, and player position.
 
 ## Phase 4: World Simulation and Presentation
 

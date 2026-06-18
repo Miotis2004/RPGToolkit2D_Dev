@@ -16,6 +16,7 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Saving
     {
         private readonly string _rootPath;
         private readonly SaveGameService _saveGameService;
+        private ICloudSaveProvider _cloudSaveProvider;
 
         public SaveSlotService(SaveGameService saveGameService, string rootPath = null)
         {
@@ -26,6 +27,9 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Saving
         public string RootPath => _rootPath;
         public string GetSlotPath(string slotId) => Path.Combine(_rootPath, Sanitize(slotId) + ".json");
         public bool Exists(string slotId) => File.Exists(GetSlotPath(slotId));
+        public void SetCloudSaveProvider(ICloudSaveProvider provider) => _cloudSaveProvider = provider;
+        public SaveResult SaveAutosave(GameSaveData data) => Save(SaveSlotIds.AutoSave, data);
+        public SaveResult SaveManual(int slotIndex, GameSaveData data) => Save(SaveSlotIds.Manual(slotIndex), data);
 
         public SaveResult Save(string slotId, GameSaveData data)
         {
@@ -35,7 +39,13 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Saving
                 if (data.metadata == null) data.metadata = new SaveMetadata();
                 data.metadata.updatedUtc = DateTime.UtcNow.ToString("o");
                 File.WriteAllText(GetSlotPath(slotId), _saveGameService.ToJson(data));
-                return SaveResult.Ok(GetSlotPath(slotId));
+                var path = GetSlotPath(slotId);
+                if (_cloudSaveProvider != null)
+                {
+                    var upload = _cloudSaveProvider.Upload(slotId, File.ReadAllText(path));
+                    if (!upload.Success) return upload;
+                }
+                return SaveResult.Ok(path);
             }
             catch (Exception ex) { return SaveResult.Fail(ex.Message); }
         }
@@ -46,7 +56,14 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Saving
             try
             {
                 var path = GetSlotPath(slotId);
-                if (!File.Exists(path)) return SaveResult.Fail("Save slot does not exist.");
+                if (!File.Exists(path))
+                {
+                    if (_cloudSaveProvider == null) return SaveResult.Fail("Save slot does not exist.");
+                    var download = _cloudSaveProvider.Download(slotId, out var cloudJson);
+                    if (!download.Success) return download;
+                    Directory.CreateDirectory(_rootPath);
+                    File.WriteAllText(path, cloudJson ?? string.Empty);
+                }
                 data = _saveGameService.FromJson(File.ReadAllText(path));
                 return data == null ? SaveResult.Fail("Save file was empty or invalid.") : SaveResult.Ok();
             }
