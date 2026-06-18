@@ -8,6 +8,8 @@ using SixStringSyn.RPGToolkit2D.Runtime.Items;
 using SixStringSyn.RPGToolkit2D.Runtime.Data;
 using SixStringSyn.RPGToolkit2D.Runtime.Foundation;
 using SixStringSyn.RPGToolkit2D.Runtime.Maps;
+using SixStringSyn.RPGToolkit2D.Runtime.Dialogue;
+using SixStringSyn.RPGToolkit2D.Runtime.NPCs;
 using SixStringSyn.RPGToolkit2D.Editor;
 using SixStringSyn.RPGToolkit2D.Editor.Windows;
 using UnityEditor;
@@ -199,6 +201,53 @@ namespace SixStringSyn.RPGToolkit2D.Tests.Editor
             Assert.That(System.Linq.Enumerable.Any(result.Messages, message => message.Code == "RPG_CHARACTER_MISSING_DISPLAY_NAME"), Is.True);
             Assert.That(System.Linq.Enumerable.Any(result.Messages, message => message.Code == "RPG_CHARACTER_DUPLICATE_ID"), Is.True);
             Assert.That(result.IsValid, Is.False);
+        }
+
+
+        [Test]
+        public void Phase5NpcEditorIsDashboardTool()
+        {
+            var npcSection = System.Linq.Enumerable.First(RPGToolkitAuthoringWorkflow.Sections, section => section.AssetType == typeof(NPCDefinition));
+
+            Assert.That(npcSection.Capability.FocusedEditorStatus, Is.EqualTo(RPGToolkitDashboardCapabilityStatus.Complete));
+            Assert.That(npcSection.Capability.ValidationStatus, Is.EqualTo(RPGToolkitDashboardCapabilityStatus.Complete));
+            Assert.That(npcSection.OpenEditor, Is.Not.Null);
+            Assert.That(RPGToolkitAuthoringWorkflow.HasFocusedTool(npcSection), Is.True);
+        }
+
+        [Test]
+        public void Phase5NpcValidationReportsMissingDialogueAndDuplicateIds()
+        {
+            var npcSection = System.Linq.Enumerable.First(RPGToolkitAuthoringWorkflow.Sections, section => section.AssetType == typeof(NPCDefinition));
+            var first = RPGToolkitAuthoringWorkflow.CreateAsset(npcSection, TestFolder) as NPCDefinition;
+            var second = RPGToolkitAuthoringWorkflow.CreateAsset(npcSection, TestFolder) as NPCDefinition;
+            second.SetId(first.Id);
+            EditorUtility.SetDirty(second);
+            AssetDatabase.SaveAssets();
+
+            var result = NPCEditorWindow.ValidateNpc(first, new[] { first, second });
+
+            Assert.That(System.Linq.Enumerable.Any(result.Messages, message => message.Code == "RPG_NPC_MISSING_DIALOGUE"), Is.True);
+            Assert.That(System.Linq.Enumerable.Any(result.Messages, message => message.Code == "RPG_NPC_DUPLICATE_ID"), Is.True);
+            Assert.That(result.IsValid, Is.False);
+        }
+
+        [Test]
+        public void Phase5NpcCreationCanLinkDialogueAsset()
+        {
+            var npcSection = System.Linq.Enumerable.First(RPGToolkitAuthoringWorkflow.Sections, section => section.AssetType == typeof(NPCDefinition));
+            var dialogueSection = System.Linq.Enumerable.First(RPGToolkitAuthoringWorkflow.Sections, section => section.AssetType == typeof(DialogueDefinition));
+            var npc = RPGToolkitAuthoringWorkflow.CreateAsset(npcSection, TestFolder) as NPCDefinition;
+            var dialogue = RPGToolkitAuthoringWorkflow.CreateAsset(dialogueSection, TestFolder) as DialogueDefinition;
+            var serialized = new SerializedObject(npc);
+            serialized.FindProperty("_dialogue").objectReferenceValue = dialogue;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(npc);
+            AssetDatabase.SaveAssets();
+
+            Assert.That(npc.Dialogue, Is.EqualTo(dialogue));
+            var result = NPCEditorWindow.ValidateNpc(npc, new[] { npc });
+            Assert.That(System.Linq.Enumerable.Any(result.Messages, message => message.Code == "RPG_NPC_MISSING_DIALOGUE"), Is.False);
         }
 
         [Test]
