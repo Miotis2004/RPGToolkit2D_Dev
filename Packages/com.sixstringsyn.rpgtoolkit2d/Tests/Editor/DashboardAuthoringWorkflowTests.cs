@@ -1,6 +1,7 @@
 using System.IO;
 using NUnit.Framework;
 using SixStringSyn.RPGToolkit2D.Editor.Dashboard;
+using SixStringSyn.RPGToolkit2D.Editor.Foundation;
 using SixStringSyn.RPGToolkit2D.Runtime.Characters;
 using SixStringSyn.RPGToolkit2D.Runtime.Items;
 using UnityEditor;
@@ -23,6 +24,24 @@ namespace SixStringSyn.RPGToolkit2D.Tests.Editor
         {
             var window = EditorWindow.GetWindow<RPGToolkitDashboardWindow>();
             Assert.That(window, Is.Not.Null);
+            window.Close();
+        }
+
+
+        [Test]
+        public void GameBuilderWindowExposesPhase7Tabs()
+        {
+            var window = EditorWindow.GetWindow<RPGToolkitGameBuilderWindow>();
+            Assert.That(window, Is.Not.Null);
+
+            foreach (var tab in RPGToolkitGameBuilderWindow.RequiredPhase7Tabs)
+            {
+                Assert.That(tab, Is.Not.Empty);
+            }
+
+            Assert.That(RPGToolkitGameBuilderWindow.RequiredPhase7Tabs, Does.Contain("Characters"));
+            Assert.That(RPGToolkitGameBuilderWindow.RequiredPhase7Tabs, Does.Contain("Save Data"));
+            Assert.That(RPGToolkitGameBuilderWindow.RequiredPhase7Tabs, Does.Contain("Settings"));
             window.Close();
         }
 
