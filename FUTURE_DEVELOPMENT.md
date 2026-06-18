@@ -369,7 +369,7 @@ Deliverables:
 
 **Exit criteria:** AI behavior can be authored visually, debugged in play mode, and connected to combat, factions, schedules, and variables. The package now includes behavior tree assets with selector, sequence, condition, and action nodes; a runtime executor with blackboard defaults and node evaluation tracing; validation for missing roots, duplicate nodes, and broken child links; and an editor window for authoring and play-mode debug previews.
 
-## Phase 7: RPG Toolkit Game Builder
+## Phase 7: RPG Toolkit Game Builder (Implemented)
 
 **Goal:** Make the toolkit feel like a cohesive commercial product rather than a collection of separate windows.
 
@@ -404,7 +404,7 @@ Deliverables:
 - Content creation wizards.
 - Project setup checklist.
 
-**Exit criteria:** A developer can spend hours inside the Game Builder creating and validating RPG content without touching Project folders directly.
+**Exit criteria:** A developer can spend hours inside the Game Builder creating and validating RPG content without touching Project folders directly. The package now includes a unified `Tools > RPG Toolkit` Game Builder shell with phase tabs, cross-system asset search, recent asset and favorites tracking, validation and setup dashboard, content creation actions, and links into focused authoring/debugger windows.
 
 ## Recommended Implementation Order
 
