@@ -4,6 +4,10 @@ All notable changes to RPG Toolkit 2D will be documented in this file.
 
 ## [0.1.0]
 
+### Phase 9 - Abilities, Combat, Status Effects, Loot, and Vendors
+
+- Added reusable combat damage primitives, targeting and hit-detection contracts, ability execution, melee/projectile adapters, status effect runtime, loot tables, vendor shops, and Phase 9 authoring windows.
+
 ### Phase 8 - Quest System and Quest Editor
 
 - Added quest definitions with objectives, conditions, rewards, validation, save data, tracker state transitions, and dialogue command integration.

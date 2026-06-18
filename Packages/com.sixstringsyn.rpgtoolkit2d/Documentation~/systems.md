@@ -282,3 +282,16 @@ Objective types include collect item, talk to NPC, reach location, kill target, 
 Rewards support items, experience, currency, and custom actions through `IQuestRewardReceiver`. Projects can use `QuestRewardReceiver` for inventory, character XP, and simple currency storage, or implement the interface to connect rewards to another economy, party, or analytics system.
 
 Dialogue can drive quest progress by binding a `QuestTracker` to a `DialogueRunner` and emitting a `DialogueCommand` named `quest_event`; the command argument is matched against custom event objective target IDs. The Quest Editor is available from **Tools > RPG Toolkit > Quest Editor** for creating, inspecting, and validating quest assets.
+
+
+## Phase 9 Abilities, Combat, Status Effects, Loot, and Vendors
+
+Phase 9 adds presentation-agnostic combat primitives. `DamageCalculator` accepts a `DamageRequest` with damage type, target resource, attack and defense stats, critical-hit values, and an optional mitigation hook so projects can layer armor formulas, elemental resistance, grid cover, or turn-based modifiers without replacing the core model. `IHitDetector`, `ICombatTargetValidator`, and `ICombatAIHook` are adapter contracts for action, tactical, or menu-driven combat.
+
+`AbilityDefinition` assets define resource costs, cooldowns, range, targeting mode, effects, and tags. `AbilityExecutor` validates cost/cooldown/targets, consumes resources, applies effects, and starts cooldowns. `MeleeAttackAdapter` and `ProjectileAttackAdapter` show how direct attacks and hit-detected projectiles can share the same executor.
+
+`StatusEffectDefinition` and `StatusEffectController` support duration, stacking modes, tick intervals, periodic damage/healing effects, and removal rules. Use these for examples such as poison by configuring a periodic effect against the target health resource.
+
+`LootTableDefinition` contains weighted item drops with quantity ranges; `LootRoller.Roll` accepts a deterministic `System.Random` seed for repeatable tests or roguelike runs. `VendorDefinition` and `VendorShop` provide stock, buy/sell pricing, inventory integration, and restock hooks for shopkeepers.
+
+Authoring menu entries are available under **Tools > RPG Toolkit** for combat tuning, abilities, loot tables, and vendors.
