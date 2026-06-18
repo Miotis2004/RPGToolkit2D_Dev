@@ -43,6 +43,55 @@ The dashboard provides creation shortcuts for the common ScriptableObject defini
 | Sprite Sheets | `RPGSpriteSheetAsset` | Source texture frame metadata, tags, groups, and default tile flags. |
 | Sprite Sheet Profiles | `RPGSpriteSheetProfile` | Slicing rules, cell size, ordering, naming, pivots, and pixels per unit. |
 
+
+### Characters
+
+Use the **Characters** card to create `CharacterDefinition` assets for player characters, companions, enemies, and stat templates. A focused Character Editor is planned; until then, create the asset from the card and edit it in the Inspector or locate it through the Database Browser.
+
+### Items
+
+Use the **Items** card to create `ItemDefinition` assets for consumables, equipment, quest items, pickups, and inventory content. **Open Tool** launches the Item Database so you can browse item assets and check authored IDs before deeper item editing workflows are added.
+
+### Quests
+
+Use the **Quests** card to create `QuestDefinition` assets for objectives, conditions, rewards, and quest state. **Open Tool** launches the Quest Editor for core quest inspection and validation while fuller visual workflow tooling remains in progress.
+
+### Dialogue
+
+Use the **Dialogue** card to create `DialogueDefinition` assets for branching conversations, choices, and command-driven narrative flow. **Open Tool** launches the Dialogue Graph Editor for graph-oriented editing and validation.
+
+### Abilities
+
+Use the **Abilities** card to create `AbilityDefinition` assets for combat abilities, interaction effects, and reusable authored actions. **Open Tool** launches the current lightweight Ability Editor entry point.
+
+### Vendors
+
+Use the **Vendors** card to create `VendorDefinition` assets for shops, stock, prices, and buy/sell rules. **Open Tool** launches the current lightweight Vendor Editor entry point while richer pricing and stock management workflows are planned.
+
+### Loot Tables
+
+Use the **Loot Tables** card to create `LootTableDefinition` assets for weighted chest drops, encounter rewards, quest rewards, and vendor-related drop lists. **Open Tool** launches the current lightweight Loot Table Editor entry point.
+
+### NPCs
+
+Use the **NPCs** card to create `NPCDefinition` assets for metadata, dialogue links, party hooks, relationship data, and world-state keys. A focused NPC Editor is planned; until then, use the Inspector and Database Browser.
+
+### Maps
+
+Use the **Maps** card to create `RPGMapDefinition` assets for tile layers, zones, entrances, exits, object placements, and transitions. **Open Tool** launches the Map Editor, and the validation buttons can check maps independently or as part of the full map-content pipeline.
+
+### Tilesets
+
+Use the **Tilesets** card to create `RPGTilesetDefinition` assets that bridge sprite sheet frames to tile metadata, collision defaults, palette grouping, and map-painting data. **Open Tool** launches the Tileset Editor.
+
+### Sprite Sheets
+
+Use the **Sprite Sheets** card to create `RPGSpriteSheetAsset` assets for source texture frame metadata, tags, groups, and default tile flags. **Open Tool** launches the Sprite Sheet Editor.
+
+### Sprite Sheet Profiles
+
+Use the **Sprite Sheet Profiles** card to create `RPGSpriteSheetProfile` assets for slicing rules, grid dimensions, naming patterns, pivots, and pixels per unit. A focused profile editor is planned; until then, edit profiles in the Inspector and use them from sprite sheet tooling.
+
 ## Database Browser
 
 The Database Browser filters assets by type and search text. Search matches asset name, display name, asset path, and RPG ID. Each row includes:

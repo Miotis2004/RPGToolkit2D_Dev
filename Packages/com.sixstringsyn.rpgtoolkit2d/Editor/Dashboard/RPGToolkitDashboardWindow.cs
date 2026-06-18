@@ -111,8 +111,16 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Dashboard
                 DrawCapabilityChips(section.Capability);
                 if (!string.IsNullOrWhiteSpace(section.Capability.Notes)) EditorGUILayout.LabelField(section.Capability.Notes, EditorStyles.wordWrappedMiniLabel);
                 EditorGUILayout.BeginHorizontal();
-                if (GUILayout.Button($"Create {section.Title}")) RPGToolkitAuthoringWorkflow.CreateAsset(section);
-                if (GUILayout.Button("Open Menu/Docs")) RPGToolkitAuthoringWorkflow.OpenDocumentation(section.DocumentationPath);
+                if (GUILayout.Button(new GUIContent($"Create {section.Title}", $"Create a new {section.AssetType.Name} asset in the default authoring folder."))) RPGToolkitAuthoringWorkflow.CreateAsset(section);
+                var toolAvailable = section.Capability.FocusedEditorStatus != RPGToolkitDashboardCapabilityStatus.Missing && RPGToolkitAuthoringWorkflow.HasFocusedTool(section);
+                using (new EditorGUI.DisabledScope(!toolAvailable))
+                {
+                    var toolLabel = toolAvailable ? "Open Tool" : "Tool Unavailable";
+                    var toolTip = toolAvailable ? $"Open the focused {section.Title} authoring tool." : $"No focused {section.Title} tool exists yet; use Docs for current guidance.";
+                    if (GUILayout.Button(new GUIContent(toolLabel, toolTip))) RPGToolkitAuthoringWorkflow.TryOpenFocusedTool(section);
+                }
+
+                if (GUILayout.Button(new GUIContent("Open Docs", $"Open the {section.Title} authoring documentation."))) RPGToolkitAuthoringWorkflow.TryOpenDocumentation(section);
                 EditorGUILayout.EndHorizontal();
                 EditorGUILayout.EndVertical();
             }
