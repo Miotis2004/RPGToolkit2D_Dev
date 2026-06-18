@@ -59,6 +59,10 @@ Use duplicate ID warnings before committing authored content. Stable unique IDs 
 | Dialogue Graph Editor | **Tools > RPG Toolkit > Dialogue Graph Editor** | Edit dialogue graph assets and validate branching links. |
 | Ability Editor | **Tools > RPG Toolkit > Ability Editor** | Lightweight ability asset creation entry point. |
 | Loot Table Editor | **Tools > RPG Toolkit > Loot Table Editor** | Lightweight loot table creation entry point. |
+| Faction Database Editor | **Tools > RPG Toolkit > Faction Database Editor** | Create and validate faction collections used by reputation-aware dialogue, events, shops, and AI. |
+| Skill Tree Designer | **Tools > RPG Toolkit > Skill Tree Designer** | Author skill node prerequisites, point costs, and progression metadata. |
+| Advanced Loot Table Editor | **Tools > RPG Toolkit > Advanced Loot Table Editor** | Validate nested weighted loot tables and run seeded drop simulations. |
+| Crafting Editor | **Tools > RPG Toolkit > Crafting Editor** | Manage recipe databases, crafting stations, and validation for inventory-backed recipes. |
 | Vendor Editor | **Tools > RPG Toolkit > Vendor Editor** | Lightweight vendor creation entry point. |
 | Combat Tuning Editor | **Tools > RPG Toolkit > Combat Tuning Editor** | Placeholder for combat tuning workflows. |
 | Save Data Debugger | **Tools > RPG Toolkit > Save Data Debugger** | Inspect save slots and serialized save metadata. |
