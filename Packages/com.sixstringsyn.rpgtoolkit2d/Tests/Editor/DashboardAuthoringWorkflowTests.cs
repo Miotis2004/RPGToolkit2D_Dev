@@ -277,6 +277,41 @@ namespace SixStringSyn.RPGToolkit2D.Tests.Editor
         }
 
 
+
+        [Test]
+        public void ItemEditorFiltersBySearchTypeRarityAndStackability()
+        {
+            var itemSection = System.Linq.Enumerable.First(RPGToolkitAuthoringWorkflow.Sections, section => section.AssetType == typeof(ItemDefinition));
+            var potion = RPGToolkitAuthoringWorkflow.CreateAsset(itemSection, TestFolder) as ItemDefinition;
+            var sword = RPGToolkitAuthoringWorkflow.CreateAsset(itemSection, TestFolder) as ItemDefinition;
+            SetSerialized(potion, "_displayName", "Filter Potion");
+            SetSerialized(potion, "_itemType", (int)ItemType.Consumable);
+            SetSerialized(potion, "_rarity", (int)ItemRarity.Rare);
+            SetSerialized(potion, "_maximumStackSize", 8);
+            SetSerialized(sword, "_displayName", "Filter Sword");
+            SetSerialized(sword, "_itemType", (int)ItemType.Weapon);
+            SetSerialized(sword, "_rarity", (int)ItemRarity.Common);
+            SetSerialized(sword, "_maximumStackSize", 1);
+
+            var filtered = ItemDatabaseWindow.FilterItems(new[] { potion, sword }, "Potion", ItemType.Consumable, ItemRarity.Rare, ItemDatabaseWindow.StackabilityFilter.Stackable);
+
+            Assert.That(filtered, Is.EquivalentTo(new[] { potion }));
+        }
+
+        [Test]
+        public void ItemEditorValidationReportsDuplicateIdsAndAuthoredDataIssues()
+        {
+            var itemSection = System.Linq.Enumerable.First(RPGToolkitAuthoringWorkflow.Sections, section => section.AssetType == typeof(ItemDefinition));
+            var first = RPGToolkitAuthoringWorkflow.CreateAsset(itemSection, TestFolder) as ItemDefinition;
+            var second = RPGToolkitAuthoringWorkflow.CreateAsset(itemSection, TestFolder) as ItemDefinition;
+            second.SetId(first.Id);
+            SetSerialized(first, "_displayName", string.Empty);
+            var result = ItemDatabaseWindow.ValidateItem(first, new[] { first, second });
+
+            Assert.That(System.Linq.Enumerable.Any(result.Messages, message => message.Code == "RPG_ITEM_DUPLICATE_ID"), Is.True);
+            Assert.That(System.Linq.Enumerable.Any(result.Messages, message => message.Code == "RPG_ITEM_MISSING_DISPLAY_NAME"), Is.True);
+        }
+
         [Test]
         public void AuthoringSectionsCoverPhase8MapWorkflowTypes()
         {
@@ -313,5 +348,23 @@ namespace SixStringSyn.RPGToolkit2D.Tests.Editor
             Assert.That(results, Is.Not.Empty);
             Assert.That(System.Linq.Enumerable.Any(results, result => result.RuleName == "Authoring asset folder"), Is.True);
         }
+        private static void SetSerialized(Object target, string propertyName, string value)
+        {
+            var serialized = new SerializedObject(target);
+            serialized.FindProperty(propertyName).stringValue = value;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(target);
+            AssetDatabase.SaveAssets();
+        }
+
+        private static void SetSerialized(Object target, string propertyName, int value)
+        {
+            var serialized = new SerializedObject(target);
+            serialized.FindProperty(propertyName).intValue = value;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(target);
+            AssetDatabase.SaveAssets();
+        }
+
     }
 }

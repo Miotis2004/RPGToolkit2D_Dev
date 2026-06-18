@@ -50,7 +50,7 @@ Use the **Characters** card to create `CharacterDefinition` assets for player ch
 
 ### Items
 
-Use the **Items** card to create `ItemDefinition` assets for consumables, equipment, quest items, pickups, and inventory content. **Open Tool** launches the Item Database so you can browse item assets and check authored IDs before deeper item editing workflows are added.
+Use the **Items** card to create `ItemDefinition` assets for consumables, equipment, quest items, pickups, and inventory content. **Open Tool** launches the Item Editor, where authors can search items, filter by type, rarity, and stackability, create or duplicate items, delete with confirmation, ping/select assets, edit item fields in a focused detail panel, validate IDs/display names/stack sizes/references, repair duplicate IDs, and export CSV balance reviews. The dashboard item card also summarizes item counts by type and rarity when expanded.
 
 ### Quests
 
