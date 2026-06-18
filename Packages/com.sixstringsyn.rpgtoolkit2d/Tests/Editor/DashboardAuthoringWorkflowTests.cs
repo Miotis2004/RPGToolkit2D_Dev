@@ -99,8 +99,18 @@ namespace SixStringSyn.RPGToolkit2D.Tests.Editor
         [Test]
         public void AuthoringSectionsExposeCapabilityStatusMetadata()
         {
+            var seenTypes = new HashSet<System.Type>();
             foreach (var section in RPGToolkitAuthoringWorkflow.Sections)
             {
+                Assert.That(section.Title, Is.Not.Empty);
+                Assert.That(section.Description, Is.Not.Empty, section.Title);
+                Assert.That(section.AssetType, Is.Not.Null, section.Title);
+                Assert.That(typeof(ScriptableObject).IsAssignableFrom(section.AssetType), Is.True, section.Title);
+                Assert.That(seenTypes.Add(section.AssetType), Is.True, $"Duplicate dashboard asset type for {section.Title}");
+                Assert.That(section.DefaultFileName, Does.EndWith(".asset"), section.Title);
+                Assert.That(section.MenuPath, Is.Not.Empty, section.Title);
+                Assert.That(section.DocumentationPath, Does.Contain("#"), section.Title);
+                Assert.That(section.SetupHint, Is.Not.Empty, section.Title);
                 Assert.That(section.Capability, Is.Not.Null, section.Title);
                 Assert.That(section.Capability.ContentTitle, Is.EqualTo(section.Title), section.Title);
                 Assert.That(section.Capability.AssetType, Is.EqualTo(section.AssetType), section.Title);
@@ -293,6 +303,43 @@ namespace SixStringSyn.RPGToolkit2D.Tests.Editor
         }
 
         [Test]
+        public void Phase12EveryContentCardCreateActionCreatesUniqueAssetInRequestedFolder()
+        {
+            foreach (var section in RPGToolkitAuthoringWorkflow.Sections)
+            {
+                var asset = RPGToolkitAuthoringWorkflow.CreateAsset(section, TestFolder);
+                var path = AssetDatabase.GetAssetPath(asset);
+
+                Assert.That(asset, Is.Not.Null, section.Title);
+                Assert.That(asset.GetType(), Is.EqualTo(section.AssetType), section.Title);
+                Assert.That(path, Does.StartWith(TestFolder), section.Title);
+                Assert.That(path, Does.EndWith(".asset"), section.Title);
+                Assert.That(Selection.activeObject, Is.EqualTo(asset), section.Title);
+                if (asset is RPGObject rpgObject)
+                {
+                    Assert.That(rpgObject.Id.IsEmpty, Is.False, section.Title);
+                }
+            }
+        }
+
+        [Test]
+        public void Phase12FocusedToolMetadataLaunchesCompletedToolsAndDocumentsMissingTools()
+        {
+            foreach (var section in RPGToolkitAuthoringWorkflow.Sections)
+            {
+                if (section.Capability.FocusedEditorStatus == RPGToolkitDashboardCapabilityStatus.Missing)
+                {
+                    Assert.That(section.OpenEditor, Is.Null, section.Title);
+                    Assert.That(RPGToolkitAuthoringWorkflow.DocumentationExists(section), Is.True, section.Title);
+                    continue;
+                }
+
+                Assert.That(section.OpenEditor, Is.Not.Null, section.Title);
+                Assert.That(RPGToolkitAuthoringWorkflow.TryOpenFocusedTool(section), Is.True, section.Title);
+            }
+        }
+
+        [Test]
         public void DatabaseBrowserFindsCreatedAssetsAndSearchesByName()
         {
             var itemSection = System.Linq.Enumerable.First(RPGToolkitAuthoringWorkflow.Sections, section => section.AssetType == typeof(ItemDefinition));
@@ -305,6 +352,26 @@ namespace SixStringSyn.RPGToolkit2D.Tests.Editor
 
             Assert.That(entries, Has.Count.GreaterThanOrEqualTo(1));
             Assert.That(System.Linq.Enumerable.Any(entries, entry => entry.Asset == asset), Is.True);
+        }
+
+        [Test]
+        public void Phase12DatabaseBrowserFlagsDuplicateIdsInSearchResults()
+        {
+            var itemSection = System.Linq.Enumerable.First(RPGToolkitAuthoringWorkflow.Sections, section => section.AssetType == typeof(ItemDefinition));
+            var first = RPGToolkitAuthoringWorkflow.CreateAsset(itemSection, TestFolder) as ItemDefinition;
+            var second = RPGToolkitAuthoringWorkflow.CreateAsset(itemSection, TestFolder) as ItemDefinition;
+            first.name = "Duplicate Search Potion A";
+            second.name = "Duplicate Search Potion B";
+            second.SetId(first.Id);
+            EditorUtility.SetDirty(first);
+            EditorUtility.SetDirty(second);
+            AssetDatabase.SaveAssets();
+
+            var entries = RPGToolkitAuthoringWorkflow.FindAssets(itemSection, first.Id.ToString());
+
+            Assert.That(System.Linq.Enumerable.Count(entries, entry => entry.DuplicateId), Is.GreaterThanOrEqualTo(2));
+            Assert.That(System.Linq.Enumerable.Any(entries, entry => entry.Asset == first && entry.DuplicateId), Is.True);
+            Assert.That(System.Linq.Enumerable.Any(entries, entry => entry.Asset == second && entry.DuplicateId), Is.True);
         }
 
 
