@@ -16,7 +16,7 @@ This roadmap converts the wishlist into implementation phases that build on each
 
 **Exit criteria:** New systems can share IDs, validation, editor UX patterns, and serialization conventions instead of inventing their own. The package now includes these contracts in runtime foundation types, editor navigation scaffolding, and architecture documentation.
 
-## Phase 1: Core Data and State Backbone
+## Phase 1: Core Data and State Backbone (Implemented)
 
 **Goal:** Build the systems that dialogue, quests, events, saves, and cutscenes all require.
 
@@ -82,7 +82,7 @@ Deliverables:
 - Condition API for querying variables and switches.
 - Change notification hooks for quests, dialogue, and events.
 
-**Exit criteria:** Designers can define content records and game state in reusable places, and other features can query those records consistently.
+**Exit criteria:** Designers can define content records and game state in reusable places, and other features can query those records consistently. The package now includes searchable database assets, sprite sheet metadata validation, and a runtime state store with declared key defaults, local/global scope, conditions, and change notifications.
 
 ## Phase 2: Dialogue and Quest Authoring
 
