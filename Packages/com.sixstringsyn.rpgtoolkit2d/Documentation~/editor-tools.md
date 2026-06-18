@@ -62,15 +62,15 @@ Use the **Dialogue** card to create `DialogueDefinition` assets for branching co
 
 ### Abilities
 
-Use the **Abilities** card to create `AbilityDefinition` assets for combat abilities, interaction effects, and reusable authored actions. **Open Tool** launches the current lightweight Ability Editor entry point.
+Use the **Abilities** card to create `AbilityDefinition` assets for combat abilities, interaction effects, and reusable authored actions. **Open Tool** launches the Ability Editor, where authors can search abilities, create or duplicate definitions, ping/select assets, edit metadata, tags, targeting mode, range, cooldowns, resource costs, and effect lists, and review validation for missing display names, duplicate IDs, invalid costs/cooldowns, and incomplete effect references.
 
 ### Vendors
 
-Use the **Vendors** card to create `VendorDefinition` assets for shops, stock, prices, and buy/sell rules. **Open Tool** launches the current lightweight Vendor Editor entry point while richer pricing and stock management workflows are planned.
+Use the **Vendors** card to create `VendorDefinition` assets for shops, stock, prices, and buy/sell rules. **Open Tool** launches the Vendor Editor, where authors can search vendors, create or duplicate definitions, ping/select assets, edit metadata, tags, sell multipliers, stock item references, prices, and quantities, validate missing items, invalid prices, duplicate stock entries, and open the Item Database for referenced item work.
 
 ### Loot Tables
 
-Use the **Loot Tables** card to create `LootTableDefinition` assets for weighted chest drops, encounter rewards, quest rewards, and vendor-related drop lists. **Open Tool** launches the current lightweight Loot Table Editor entry point.
+Use the **Loot Tables** card to create `LootTableDefinition` assets for weighted chest drops, encounter rewards, quest rewards, and vendor-related drop lists. **Open Tool** launches the Loot Table Editor, where authors can search tables, create or duplicate definitions, ping/select assets, edit weighted item or nested-table entries, quantity ranges, validate empty tables, missing rewards, invalid weights or ranges, and run deterministic simulation previews for expected drop rates.
 
 ### NPCs
 
@@ -111,13 +111,13 @@ Use duplicate ID warnings before committing authored content. Stable unique IDs 
 | Item Database | **Tools > RPG Toolkit > Item Database** | Item-focused database view and validation support. |
 | Quest Editor | **Tools > RPG Toolkit > Quest Editor** | Create and inspect quest definitions, objectives, rewards, and validation output. |
 | Dialogue Graph Editor | **Tools > RPG Toolkit > Dialogue Graph Editor** | Edit dialogue graph assets and validate branching links. |
-| Ability Editor | **Tools > RPG Toolkit > Ability Editor** | Lightweight ability asset creation entry point. |
-| Loot Table Editor | **Tools > RPG Toolkit > Loot Table Editor** | Lightweight loot table creation entry point. |
+| Ability Editor | **Tools > RPG Toolkit > Ability Editor** | Dedicated ability list/detail editor with metadata, targeting, costs, effects, and validation. |
+| Loot Table Editor | **Tools > RPG Toolkit > Loot Table Editor** | Dedicated weighted-entry editor with validation and simulation previews. |
 | Faction Database Editor | **Tools > RPG Toolkit > Faction Database Editor** | Create and validate faction collections used by reputation-aware dialogue, events, shops, and AI. |
 | Skill Tree Designer | **Tools > RPG Toolkit > Skill Tree Designer** | Author skill node prerequisites, point costs, and progression metadata. |
 | Advanced Loot Table Editor | **Tools > RPG Toolkit > Advanced Loot Table Editor** | Validate nested weighted loot tables and run seeded drop simulations. |
 | Crafting Editor | **Tools > RPG Toolkit > Crafting Editor** | Manage recipe databases, crafting stations, and validation for inventory-backed recipes. |
-| Vendor Editor | **Tools > RPG Toolkit > Vendor Editor** | Lightweight vendor creation entry point. |
+| Vendor Editor | **Tools > RPG Toolkit > Vendor Editor** | Dedicated stock/pricing editor with validation and Item Database navigation. |
 | Combat Tuning Editor | **Tools > RPG Toolkit > Combat Tuning Editor** | Placeholder for combat tuning workflows. |
 | Save Data Debugger | **Tools > RPG Toolkit > Save Data Debugger** | Inspect save slots and serialized save metadata. |
 | World State Debugger | **Tools > RPG Toolkit > World State Debugger** | Inspect and edit world-state keys during play and authoring. |

@@ -4,6 +4,11 @@ All notable changes to RPG Toolkit 2D will be documented in this file.
 
 ## [Unreleased]
 
+### Dashboard Phase 7 - Ability, Vendor, and Loot Authoring
+
+- Replaced Ability, Vendor, and Loot Table asset-picker placeholders with focused list/detail editors, domain field editing, validation summaries, and loot simulation previews.
+- Updated dashboard capability metadata, validation routing, editor documentation, and editor tests for the completed Phase 7 workflows.
+
 ### Maps Phase 10 - Performance, Scale, and Usability Polish
 
 - Added runtime map query caches for tile, zone, object, and blocked-cell lookups on large maps.
