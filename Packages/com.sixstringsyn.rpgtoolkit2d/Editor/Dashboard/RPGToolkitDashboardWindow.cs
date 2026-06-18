@@ -124,6 +124,7 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Dashboard
                 if (data.InvalidAssetCount > 0) DrawCountPill($"{data.InvalidAssetCount} invalid");
                 if (data.QuestMissingObjectiveCount > 0) DrawCountPill($"{data.QuestMissingObjectiveCount} no objectives");
                 if (data.QuestMissingRewardCount > 0) DrawCountPill($"{data.QuestMissingRewardCount} no rewards");
+                if (data.DialogueUnreachableNodeWarningCount > 0) DrawCountPill($"{data.DialogueUnreachableNodeWarningCount} unreachable");
                 EditorGUILayout.EndHorizontal();
 
                 if (!compact) EditorGUILayout.LabelField(section.Description, EditorStyles.wordWrappedLabel);
@@ -138,6 +139,7 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Dashboard
                     if (data.InvalidAssetCount > 0) EditorGUILayout.HelpBox($"{data.InvalidAssetCount} {section.Title} asset(s) failed content validation.", MessageType.Warning);
                     if (data.QuestMissingObjectiveCount > 0) EditorGUILayout.HelpBox($"{data.QuestMissingObjectiveCount} quest(s) are missing objectives.", MessageType.Warning);
                     if (data.QuestMissingRewardCount > 0) EditorGUILayout.HelpBox($"{data.QuestMissingRewardCount} quest(s) are missing rewards.", MessageType.Warning);
+                    if (data.DialogueUnreachableNodeWarningCount > 0) EditorGUILayout.HelpBox($"{data.DialogueUnreachableNodeWarningCount} dialogue node(s) are unreachable from their entry nodes.", MessageType.Warning);
                     if (!string.IsNullOrWhiteSpace(section.SetupHint)) EditorGUILayout.HelpBox(section.SetupHint, MessageType.Info);
                     if (!string.IsNullOrWhiteSpace(section.Capability.Notes)) EditorGUILayout.LabelField(section.Capability.Notes, EditorStyles.wordWrappedMiniLabel);
                     if (section.AssetType == typeof(ItemDefinition)) DrawItemCardBreakdown(data);

@@ -58,7 +58,17 @@ Use the **Quests** card to create `QuestDefinition` assets for objectives, condi
 
 ### Dialogue
 
-Use the **Dialogue** card to create `DialogueDefinition` assets for branching conversations, choices, and command-driven narrative flow. **Open Tool** launches the Dialogue Graph Editor for graph-oriented editing and validation.
+Use the **Dialogue** card to create `DialogueDefinition` assets for branching conversations, choices, and command-driven narrative flow. **Open Tool** launches the Dialogue Graph Editor for node-link authoring and validation. The editor includes a searchable node outline, a structured graph view that shows `Next` and choice edges, and a node detail panel for editing speaker, text, localization keys, portraits, conditions, commands, and explicit choice targets.
+
+Recommended workflow:
+
+1. Create or assign a dialogue asset, then add an entry node and the line, choice, quest update, reward, and exit nodes needed for the conversation.
+2. Select nodes from the outline or graph view and use the **Next Node** popup for linear flow.
+3. Add **Choice Edge** entries for branching flow and assign each choice target from the target popup.
+4. Use search to find speaker names, localization keys, node text, choice text, condition keys, and command payloads such as world-state keys.
+5. Run **Validate** before linking dialogue from an NPC. Validation reports empty graphs, missing entry nodes, duplicate node IDs, broken next-node links, broken choice targets, missing text/localization keys, and unreachable nodes.
+
+The dashboard Dialogue card summarizes invalid dialogue assets and unreachable-node warnings so broken dialogue links are visible without opening every asset.
 
 ### Abilities
 

@@ -90,7 +90,7 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Dashboard
 
     public sealed class RPGToolkitDashboardCardData
     {
-        public RPGToolkitDashboardCardData(RPGToolkitAuthoringSection section, IReadOnlyList<RPGToolkitAssetBrowserEntry> entries, int invalidAssetCount, int validationMessageCount, string lastValidationSummary, int questMissingObjectiveCount = 0, int questMissingRewardCount = 0)
+        public RPGToolkitDashboardCardData(RPGToolkitAuthoringSection section, IReadOnlyList<RPGToolkitAssetBrowserEntry> entries, int invalidAssetCount, int validationMessageCount, string lastValidationSummary, int questMissingObjectiveCount = 0, int questMissingRewardCount = 0, int dialogueUnreachableNodeWarningCount = 0)
         {
             Section = section ?? throw new ArgumentNullException(nameof(section));
             Entries = entries ?? Array.Empty<RPGToolkitAssetBrowserEntry>();
@@ -101,6 +101,7 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Dashboard
             LastValidationSummary = lastValidationSummary ?? "Not validated yet.";
             QuestMissingObjectiveCount = questMissingObjectiveCount;
             QuestMissingRewardCount = questMissingRewardCount;
+            DialogueUnreachableNodeWarningCount = dialogueUnreachableNodeWarningCount;
         }
 
         public RPGToolkitAuthoringSection Section { get; }
@@ -112,7 +113,8 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Dashboard
         public string LastValidationSummary { get; }
         public int QuestMissingObjectiveCount { get; }
         public int QuestMissingRewardCount { get; }
-        public bool HasWarnings => DuplicateIdCount > 0 || InvalidAssetCount > 0 || QuestMissingObjectiveCount > 0 || QuestMissingRewardCount > 0 || (Section.WarnWhenEmpty && AssetCount == 0);
+        public int DialogueUnreachableNodeWarningCount { get; }
+        public bool HasWarnings => DuplicateIdCount > 0 || InvalidAssetCount > 0 || QuestMissingObjectiveCount > 0 || QuestMissingRewardCount > 0 || DialogueUnreachableNodeWarningCount > 0 || (Section.WarnWhenEmpty && AssetCount == 0);
         public string EmptyContentWarning => Section.WarnWhenEmpty && AssetCount == 0 ? $"No {Section.Title.ToLowerInvariant()} found yet." : string.Empty;
     }
 
@@ -141,7 +143,7 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Dashboard
             CreateSection("Characters", "Create heroes, enemies, party members, and stat templates.", typeof(CharacterDefinition), "NewCharacterDefinition.asset", "Tools/RPG Toolkit/Character Editor", EditorToolsDocumentationAnchorPrefix + "characters", "Characters usually need stats, resources, tags, and save/party integration before use.", true, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, "Character Editor supports creation, duplication, focused field editing, stat/resource helpers, role tags, search, and validation.", global::SixStringSyn.RPGToolkit2D.Editor.Windows.CharacterEditorWindow.Open),
             CreateSection("Items", "Create consumables, equipment, quest items, and inventory content.", typeof(ItemDefinition), "NewItemDefinition.asset", "Assets/Create/RPG Toolkit/Item Definition", EditorToolsDocumentationAnchorPrefix + "items", "Items power inventory, vendors, loot, crafting, quests, and pickups.", true, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, "Item Editor supports search, filters, creation, duplication, deletion, focused editing, validation, duplicate ID repair, and CSV export.", global::SixStringSyn.RPGToolkit2D.Editor.Windows.ItemDatabaseWindow.Open),
             CreateSection("Quests", "Author objectives, conditions, rewards, and turn-in behavior.", typeof(QuestDefinition), "NewQuestDefinition.asset", "Tools/RPG Toolkit/Quest Editor", EditorToolsDocumentationAnchorPrefix + "quests", "Quests need at least one objective and often reference items, NPCs, dialogue, or world-state keys.", false, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, "Quest Editor supports search, creation, metadata, reorderable objectives/conditions/rewards, quick links, validation, dependency views, and safe repairs.", global::SixStringSyn.RPGToolkit2D.Editor.QuestEditor.QuestEditorWindow.Open),
-            CreateSection("Dialogue", "Build branching conversations and command-driven narrative flow.", typeof(DialogueDefinition), "NewDialogueDefinition.asset", "Tools/RPG Toolkit/Dialogue Graph Editor", EditorToolsDocumentationAnchorPrefix + "dialogue", "Dialogue is most useful when linked from NPCs and backed by conditions or commands.", false, RPGToolkitDashboardCapabilityStatus.Partial, RPGToolkitDashboardCapabilityStatus.Partial, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, "Dialogue Graph is available but still needs complete visual workflow coverage while section-specific docs are available.", global::SixStringSyn.RPGToolkit2D.Editor.DialogueGraph.DialogueGraphEditorWindow.Open),
+            CreateSection("Dialogue", "Build branching conversations and command-driven narrative flow.", typeof(DialogueDefinition), "NewDialogueDefinition.asset", "Tools/RPG Toolkit/Dialogue Graph Editor", EditorToolsDocumentationAnchorPrefix + "dialogue", "Dialogue is most useful when linked from NPCs and backed by conditions or commands.", false, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, "Dialogue Graph supports node-link authoring, node detail editing, explicit edge/choice editing, search, validation, and dashboard health counts.", global::SixStringSyn.RPGToolkit2D.Editor.DialogueGraph.DialogueGraphEditorWindow.Open),
             CreateSection("Abilities", "Create reusable abilities for combat, interactions, and custom effects.", typeof(AbilityDefinition), "NewAbilityDefinition.asset", "Tools/RPG Toolkit/Ability Editor", EditorToolsDocumentationAnchorPrefix + "abilities", "Abilities should define targeting, costs, cooldowns, tags, and runtime effects.", false, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, "Ability Editor supports creation, duplication, focused metadata/targeting/cost/effect editing, and validation.", global::SixStringSyn.RPGToolkit2D.Editor.Windows.AbilityEditorWindow.Open),
             CreateSection("Vendors", "Configure shops, prices, stock, buy/sell rules, and inventory integration.", typeof(VendorDefinition), "NewVendorDefinition.asset", "Tools/RPG Toolkit/Vendor Editor", EditorToolsDocumentationAnchorPrefix + "vendors", "Vendors need item stock and pricing rules before they are useful in-game.", false, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, "Vendor Editor supports creation, duplication, focused stock/pricing editing, Item Database navigation, and validation.", global::SixStringSyn.RPGToolkit2D.Editor.Windows.VendorEditorWindow.Open),
             CreateSection("Loot Tables", "Define weighted drops for chests, encounters, rewards, and vendors.", typeof(LootTableDefinition), "NewLootTableDefinition.asset", "Tools/RPG Toolkit/Loot Table Editor", EditorToolsDocumentationAnchorPrefix + "loot-tables", "Loot tables need at least one weighted item or nested-table entry.", false, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, "Loot Table Editor supports creation, duplication, weighted-entry editing, validation, and simulation previews.", global::SixStringSyn.RPGToolkit2D.Editor.Windows.LootTableEditorWindow.Open),
@@ -215,6 +217,7 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Dashboard
             var validationMessageCount = 0;
             var questMissingObjectiveCount = 0;
             var questMissingRewardCount = 0;
+            var dialogueUnreachableNodeWarningCount = 0;
 
             foreach (var entry in entries)
             {
@@ -225,12 +228,13 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Dashboard
                     if (quest.Rewards.Count == 0) questMissingRewardCount++;
                 }
                 if (result == null) continue;
+                if (entry.Asset is DialogueDefinition) dialogueUnreachableNodeWarningCount += result.Messages.Count(message => message.Code == "DIALOGUE_UNREACHABLE_NODE");
                 validationMessageCount += result.Messages.Count;
                 if (!result.IsValid) invalidAssetCount++;
             }
 
             var summary = lastValidationResults != null && lastValidationResults.TryGetValue(section.Title, out var lastResult) ? lastResult : "Not validated yet.";
-            return new RPGToolkitDashboardCardData(section, entries, invalidAssetCount, validationMessageCount, summary, questMissingObjectiveCount, questMissingRewardCount);
+            return new RPGToolkitDashboardCardData(section, entries, invalidAssetCount, validationMessageCount, summary, questMissingObjectiveCount, questMissingRewardCount, dialogueUnreachableNodeWarningCount);
         }
 
         public static RPGToolkitDashboardCardData ValidateCard(RPGToolkitAuthoringSection section, IDictionary<string, string> lastValidationResults)
