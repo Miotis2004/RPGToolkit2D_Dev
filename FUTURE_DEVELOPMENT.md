@@ -187,7 +187,7 @@ Deliverables:
 
 **Exit criteria:** Interactive events can modify game state, and that state can be saved, loaded, and migrated across versions. The package now includes RPG Maker-style event assets, a runtime event runner with integration hooks, an editor window for event authoring, multiple save slot helpers, autosave/manual save entry points, cloud save hooks, migrations, and sample save contributors for world variables, quests, inventory, and player position.
 
-## Phase 4: World Simulation and Presentation
+## Phase 4: World Simulation and Presentation (Implemented)
 
 **Goal:** Give designers a grid/tile-based level editor and make worlds feel alive with schedules, map metadata, and directed scenes.
 
@@ -266,7 +266,7 @@ Deliverables:
 - Dialogue and variable integration.
 - Skippable playback support.
 
-**Exit criteria:** Designers can annotate maps, schedule NPC behavior, and create story sequences that integrate with dialogue, quests, variables, and events.
+**Exit criteria:** Designers can annotate maps, schedule NPC behavior, and create story sequences that integrate with dialogue, quests, variables, and events. The package now includes tileset and layered map assets, runtime map zone/blocker queries, validation for tile/link/layer issues, NPC schedule assets with time-of-day resolution, and cutscene graph assets with skippable playback metadata and link validation.
 
 ## Phase 5: Advanced Gameplay Editors
 
