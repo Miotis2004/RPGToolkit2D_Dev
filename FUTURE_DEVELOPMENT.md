@@ -11,6 +11,7 @@ This roadmap converts the wishlist into implementation phases that build on each
 - Add editor-window navigation patterns for the future RPG Toolkit Game Builder.
 - Create validation and diagnostics utilities for content authors.
 - Define serialization/versioning rules for saved content and project data.
+- Define sprite sheet import rules for tiles, monsters, characters, items, portraits, and UI icons.
 - Document extension points for custom conditions, rewards, events, and variables.
 
 **Exit criteria:** New systems can share IDs, validation, editor UX patterns, and serialization conventions instead of inventing their own.
@@ -31,6 +32,8 @@ Centralized searchable databases for:
 - Skills
 - Quests
 - Dialogue
+- Tilesets
+- Sprite sheets
 
 Deliverables:
 
@@ -38,6 +41,24 @@ Deliverables:
 - Search, filter, sort, and reference lookup support.
 - Broken-reference detection.
 - Bulk validation for designer-authored data.
+
+### Sprite Sheet Asset Pipeline
+
+Support sprite sheets for:
+
+- Level tiles and autotiles
+- Monsters
+- Characters
+- Items
+- Equipment icons
+- Portraits
+
+Deliverables:
+
+- Sprite sheet import presets.
+- Grid slicing profiles for common tile sizes.
+- Metadata for animation frames, collision hints, pivots, and item icons.
+- Validation for missing sprites, inconsistent cell sizes, and duplicate asset IDs.
 
 ### Variable and Switch System
 
@@ -168,7 +189,30 @@ Deliverables:
 
 ## Phase 4: World Simulation and Presentation
 
-**Goal:** Make worlds feel alive with schedules, map metadata, and directed scenes.
+**Goal:** Give designers a grid/tile-based level editor and make worlds feel alive with schedules, map metadata, and directed scenes.
+
+### Grid/Tile-Based Level Editor
+
+Yes: this should be a core toolkit feature. RPG creators expect to build maps from sprite sheets and tilesets, place gameplay objects on a grid, and preview the result without leaving the RPG Toolkit workflow.
+
+Support:
+
+- Tile palette creation from sprite sheets
+- Tile layers for ground, decoration, collision, overhead, and triggers
+- Grid snapping and brush tools
+- Rectangle, fill, erase, replace, and stamp brushes
+- Prefab/object placement for monsters, NPCs, chests, items, doors, exits, and save points
+- Collision, trigger, encounter, lighting, weather, and region overlays
+- Map connections, entrances, exits, and teleport targets
+
+Deliverables:
+
+- Level/map asset model.
+- Tileset asset model linked to sprite sheet slices.
+- Tile palette and brush editor.
+- Layered map editing workflow.
+- Runtime map loader/spawner.
+- Validation for missing tiles, invalid layer rules, broken map links, and overlapping blockers.
 
 ### Tilemap World Toolkit
 
@@ -184,7 +228,7 @@ Provide:
 Deliverables:
 
 - Tilemap metadata authoring tools.
-- Zone painting/assignment workflow.
+- Zone painting/assignment workflow integrated with the grid/tile level editor.
 - Runtime query API for map regions and zones.
 - Encounter, spawn, lighting, and weather hooks.
 
@@ -343,6 +387,8 @@ Tabs:
 - Quests
 - Combat
 - Maps
+- Tilesets
+- Sprite Sheets
 - NPCs
 - Events
 - Variables
@@ -363,20 +409,22 @@ Deliverables:
 ## Recommended Implementation Order
 
 1. Database system
-2. Variable/switch system
-3. Visual dialogue editor
-4. Quest designer
-5. Event system
-6. Save system framework
-7. Tilemap world toolkit
-8. NPC scheduling
-9. Cutscene system
-10. Reputation/faction system
-11. Skill tree designer
-12. Loot table editor
-13. Crafting editor
-14. Behavior tree editor
-15. RPG Toolkit Game Builder shell and polish
+2. Sprite sheet asset pipeline
+3. Variable/switch system
+4. Grid/tile-based level editor
+5. Visual dialogue editor
+6. Quest designer
+7. Event system
+8. Save system framework
+9. Tilemap world toolkit
+10. NPC scheduling
+11. Cutscene system
+12. Reputation/faction system
+13. Skill tree designer
+14. Loot table editor
+15. Crafting editor
+16. Behavior tree editor
+17. RPG Toolkit Game Builder shell and polish
 
 ## Planning Notes
 
@@ -385,3 +433,4 @@ Deliverables:
 - Keep systems modular. Users should be able to adopt dialogue without quests, or quests without tilemaps.
 - Prioritize migration and validation early because RPG projects accumulate large amounts of authored content.
 - Reuse node graph infrastructure across dialogue, cutscenes, skill trees, and behavior trees where possible.
+- Treat sprite sheets and tilemaps as first-class assets because they drive levels, monsters, characters, items, animation previews, collisions, encounters, and map metadata.
