@@ -75,6 +75,18 @@ Runtime systems should be implemented in `Runtime`, Unity Editor-only tools in `
 - Name files after the primary type they contain.
 - Use PascalCase for public types, methods, and properties; camelCase for locals and parameters; and `_camelCase` for private instance fields.
 
+
+## Phase 0 Foundation Contracts
+
+Phase 0 establishes the conventions future systems must reuse instead of inventing local equivalents:
+
+- Content definitions are `ScriptableObject` assets derived from `RPGObject`, grouped by `RPGContentManifest`, and referenced through stable `RPGId` values or typed `RPGContentReference` values.
+- Authoring data carries an `RPGSchemaVersion`; compatible migrations keep the same major version, while breaking save/project changes increment the major version.
+- Validation uses `RPGValidationResult` messages with stable diagnostic codes so runtime systems, editor windows, and tests can display the same authoring problems.
+- Sprite sheets use `RPGSpriteSheetProfile` assets to record content kind, cell size, padding, pivot, pixels-per-unit, and consistency expectations for tiles, monsters, characters, items, portraits, and UI icons.
+- The future RPG Toolkit Game Builder registers pages through `RPGBuilderNavigation`, keeping window navigation consistent across independently developed systems.
+- Custom conditions, rewards, event commands, and variable providers implement the `IRPGCondition`, `IRPGReward`, `IRPGEventCommand`, and `IRPGVariableProvider` extension interfaces.
+
 ## Phase 1 Assembly Layout
 
 The Phase 1 package foundation defines four assemblies:

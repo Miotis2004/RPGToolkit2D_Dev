@@ -2,7 +2,7 @@
 
 This roadmap converts the wishlist into implementation phases that build on each other. The goal is to deliver useful editor-facing functionality early while establishing shared runtime foundations for later systems.
 
-## Phase 0: Foundation and Architecture
+## Phase 0: Foundation and Architecture (Implemented)
 
 **Goal:** Create the shared patterns and data contracts every future feature will depend on.
 
@@ -14,7 +14,7 @@ This roadmap converts the wishlist into implementation phases that build on each
 - Define sprite sheet import rules for tiles, monsters, characters, items, portraits, and UI icons.
 - Document extension points for custom conditions, rewards, events, and variables.
 
-**Exit criteria:** New systems can share IDs, validation, editor UX patterns, and serialization conventions instead of inventing their own.
+**Exit criteria:** New systems can share IDs, validation, editor UX patterns, and serialization conventions instead of inventing their own. The package now includes these contracts in runtime foundation types, editor navigation scaffolding, and architecture documentation.
 
 ## Phase 1: Core Data and State Backbone
 
