@@ -93,6 +93,34 @@ namespace SixStringSyn.RPGToolkit2D.Tests.Editor
             Assert.That(statuses, Does.Contain(RPGToolkitDashboardCapabilityStatus.Missing));
         }
 
+
+        [Test]
+        public void Phase2SectionsExposeFocusedToolMetadataWhenAvailable()
+        {
+            foreach (var section in RPGToolkitAuthoringWorkflow.Sections)
+            {
+                if (section.Capability.FocusedEditorStatus == RPGToolkitDashboardCapabilityStatus.Missing)
+                {
+                    Assert.That(section.OpenEditor, Is.Null, section.Title);
+                    continue;
+                }
+
+                Assert.That(RPGToolkitAuthoringWorkflow.HasFocusedTool(section), Is.True, section.Title);
+                Assert.That(section.OpenEditor, Is.Not.Null, section.Title);
+            }
+        }
+
+        [Test]
+        public void Phase2SectionsExposeExistingDeepLinkDocumentation()
+        {
+            foreach (var section in RPGToolkitAuthoringWorkflow.Sections)
+            {
+                Assert.That(section.DocumentationPath, Does.Contain("Documentation~/editor-tools.md#"), section.Title);
+                Assert.That(section.Capability.DocumentationStatus, Is.EqualTo(RPGToolkitDashboardCapabilityStatus.Complete), section.Title);
+                Assert.That(RPGToolkitAuthoringWorkflow.DocumentationExists(section), Is.True, section.Title);
+            }
+        }
+
         [Test]
         public void CreationWizardCreatesValidCharacterAsset()
         {
