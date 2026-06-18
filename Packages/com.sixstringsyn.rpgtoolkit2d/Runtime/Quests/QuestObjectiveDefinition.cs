@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace SixStringSyn.RPGToolkit2D.Runtime.Quests
 {
-    public enum QuestObjectiveType { CollectItem, TalkToNPC, ReachLocation, KillTarget, CustomEvent, CustomScript }
+    public enum QuestObjectiveType { CollectItem, TalkToNPC, ReachLocation, KillTarget, EscortNPC, CraftItem, CustomEvent, CustomScript }
 
     [Serializable]
     public sealed class QuestObjectiveDefinition
@@ -24,6 +24,16 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Quests
         public string TargetId => _targetId ?? string.Empty;
         public int RequiredAmount => Mathf.Max(1, _requiredAmount);
         public bool Optional => _optional;
+
+        public static QuestObjectiveDefinition Create(QuestObjectiveType type, string description, string targetId = null, int requiredAmount = 1, bool optional = false)
+        {
+            return new QuestObjectiveDefinition { _type = type, _description = description, _targetId = targetId, _requiredAmount = Mathf.Max(1, requiredAmount), _optional = optional };
+        }
+
+        public static QuestObjectiveDefinition Collect(ItemDefinition item, int requiredAmount, string description = null, bool optional = false)
+        {
+            return new QuestObjectiveDefinition { _type = QuestObjectiveType.CollectItem, _description = description, _item = item, _requiredAmount = Mathf.Max(1, requiredAmount), _optional = optional };
+        }
 
         public bool Matches(QuestObjectiveType type, string targetId, ItemDefinition item)
         {

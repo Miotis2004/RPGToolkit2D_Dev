@@ -84,7 +84,7 @@ Deliverables:
 
 **Exit criteria:** Designers can define content records and game state in reusable places, and other features can query those records consistently. The package now includes searchable database assets, sprite sheet metadata validation, and a runtime state store with declared key defaults, local/global scope, conditions, and change notifications.
 
-## Phase 2: Dialogue and Quest Authoring
+## Phase 2: Dialogue and Quest Authoring (Implemented)
 
 **Goal:** Deliver the first major game-making workflow: conversations that affect quests and game state.
 
@@ -140,7 +140,7 @@ Deliverables:
 - Reward integration.
 - Dialogue-triggered quest updates.
 
-**Exit criteria:** Designers can create a quest, connect it to dialogue, test it in play mode, and inspect quest/variable state.
+**Exit criteria:** Designers can create a quest, connect it to dialogue, test it in play mode, and inspect quest/variable state. The package now includes dialogue node authoring metadata, quest-update/reward dialogue node types, quest command helpers, designer-facing objective templates, and validated runtime/editor coverage for dialogue-driven quest workflows.
 
 ## Phase 3: Event System and Save Framework
 

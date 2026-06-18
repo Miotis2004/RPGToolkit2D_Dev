@@ -2,6 +2,15 @@
 
 All notable changes to RPG Toolkit 2D will be documented in this file.
 
+## [Unreleased]
+
+### Phase 2 Roadmap - Dialogue and Quest Authoring
+
+- Added dialogue authoring metadata for localization keys, portraits, and speaker animations.
+- Added quest-update and reward dialogue node types plus command helpers for dialogue-driven quest events.
+- Added designer-facing quest objective templates for kill, collect, escort, craft, talk, reach, and custom objectives.
+- Expanded runtime tests around dialogue presentation metadata and quest objective templates.
+
 
 ## [1.0.0] - Phase 13 Package Hardening and Release Preparation
 

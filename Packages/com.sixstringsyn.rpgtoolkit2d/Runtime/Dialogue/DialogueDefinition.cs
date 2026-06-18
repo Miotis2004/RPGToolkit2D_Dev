@@ -40,10 +40,12 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Dialogue
             var ids = new HashSet<string>();
             foreach (var node in _nodes)
             {
+                if (node.NodeType != DialogueNodeType.Exit && string.IsNullOrWhiteSpace(node.Text) && string.IsNullOrWhiteSpace(node.LocalizationKey)) result.AddWarning("DIALOGUE_NODE_TEXT_MISSING", $"Node '{node.NodeId}' has no text or localization key.", Id);
                 if (string.IsNullOrWhiteSpace(node.NodeId) || !ids.Add(node.NodeId)) result.AddError("DIALOGUE_DUPLICATE_NODE", "Dialogue contains duplicate or empty node ids.", Id);
                 if (!string.IsNullOrWhiteSpace(node.NextNodeId) && GetNode(node.NextNodeId) == null) result.AddError("DIALOGUE_MISSING_NEXT", $"Node '{node.Text}' links to a missing next node.", Id);
                 foreach (var choice in node.Choices)
                 {
+                    if (string.IsNullOrWhiteSpace(choice.Text)) result.AddWarning("DIALOGUE_CHOICE_TEXT_MISSING", $"Node '{node.NodeId}' has a choice with no text.", Id);
                     if (string.IsNullOrWhiteSpace(choice.TargetNodeId) || GetNode(choice.TargetNodeId) == null) result.AddError("DIALOGUE_MISSING_CHOICE_TARGET", $"Choice '{choice.Text}' links to a missing node.", Id);
                 }
             }
