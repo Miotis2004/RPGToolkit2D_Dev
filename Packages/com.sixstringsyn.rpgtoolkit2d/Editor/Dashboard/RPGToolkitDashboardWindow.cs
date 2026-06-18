@@ -1,5 +1,7 @@
 using SixStringSyn.RPGToolkit2D.Editor;
+using SixStringSyn.RPGToolkit2D.Runtime.Items;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
@@ -134,6 +136,7 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Dashboard
                     if (data.InvalidAssetCount > 0) EditorGUILayout.HelpBox($"{data.InvalidAssetCount} {section.Title} asset(s) failed content validation.", MessageType.Warning);
                     if (!string.IsNullOrWhiteSpace(section.SetupHint)) EditorGUILayout.HelpBox(section.SetupHint, MessageType.Info);
                     if (!string.IsNullOrWhiteSpace(section.Capability.Notes)) EditorGUILayout.LabelField(section.Capability.Notes, EditorStyles.wordWrappedMiniLabel);
+                    if (section.AssetType == typeof(ItemDefinition)) DrawItemCardBreakdown(data);
                 }
 
                 EditorGUILayout.BeginHorizontal();
@@ -153,6 +156,14 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Dashboard
                 EditorGUILayout.EndVertical();
             }
             EditorGUILayout.Space();
+        }
+
+        private void DrawItemCardBreakdown(RPGToolkitDashboardCardData data)
+        {
+            var items = data.Entries.Select(entry => entry.Asset as ItemDefinition).Where(item => item != null).ToList();
+            if (items.Count == 0) return;
+            EditorGUILayout.LabelField("Item types: " + string.Join(", ", items.GroupBy(item => item.ItemType).Select(group => $"{group.Key} {group.Count()}")), EditorStyles.wordWrappedMiniLabel);
+            EditorGUILayout.LabelField("Item rarities: " + string.Join(", ", items.GroupBy(item => item.Rarity).Select(group => $"{group.Key} {group.Count()}")), EditorStyles.wordWrappedMiniLabel);
         }
 
         private void DrawCountPill(string text)
