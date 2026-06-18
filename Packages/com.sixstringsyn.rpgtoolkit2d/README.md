@@ -36,3 +36,7 @@ Open **Tools > RPG Toolkit > Dashboard** to validate package setup, create core 
 - Economy and crafting APIs are marked experimental for the 1.0.0 release candidate and may receive compatibility-breaking refinements.
 - The Basic RPG Setup sample is an onboarding checklist only; production scenes should be supplied by the host project until full sample packs are imported.
 - Unity Editor package validation, local-path install, Git URL install, and package-removal checks must be run in the target release environment before publishing.
+
+## Maps workflow tutorial
+
+Phase 9 documentation is available in `Documentation~/maps-workflow.md`. It covers the full source-art-to-playable-map pipeline and pairs with the importable **Map Workflow Tutorial** sample.
