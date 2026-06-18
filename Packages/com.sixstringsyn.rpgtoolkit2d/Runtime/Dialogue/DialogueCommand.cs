@@ -19,5 +19,9 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Dialogue
 
         public string Name => _name ?? string.Empty;
         public string Argument => _argument ?? string.Empty;
+
+        public static DialogueCommand QuestEvent(string eventId) => new DialogueCommand("quest_event", eventId);
+        public static DialogueCommand SetVariable(string key, string value) => new DialogueCommand("set_variable", $"{key}={value}");
+        public static DialogueCommand GiveReward(string rewardId) => new DialogueCommand("reward", rewardId);
     }
 }

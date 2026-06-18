@@ -18,6 +18,10 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Quests
         public IReadOnlyList<QuestRewardDefinition> Rewards => _rewards;
         public bool AutoTurnIn => _autoTurnIn;
 
+        public void AddObjective(QuestObjectiveDefinition objective) { if (objective != null) _objectives.Add(objective); }
+        public void AddReward(QuestRewardDefinition reward) { if (reward != null) _rewards.Add(reward); }
+        public void AddCondition(QuestCondition condition) { if (condition != null) _conditions.Add(condition); }
+
         public RPGValidationResult ValidateQuest()
         {
             var result = new RPGValidationResult();

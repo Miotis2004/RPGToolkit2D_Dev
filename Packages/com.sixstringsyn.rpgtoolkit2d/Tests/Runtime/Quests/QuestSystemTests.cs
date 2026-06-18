@@ -50,6 +50,20 @@ namespace SixStringSyn.RPGToolkit2D.Tests.Runtime.Quests
             Assert.AreEqual(1, restored.GetQuest(quest).Objectives[0].Progress);
             Object.DestroyImmediate(quest);
         }
+
+        [Test]
+        public void QuestObjectiveTemplatesSupportDesignerAuthoredObjectives()
+        {
+            var quest = ScriptableObject.CreateInstance<QuestDefinition>();
+            quest.AddObjective(QuestObjectiveDefinition.Create(QuestObjectiveType.KillTarget, "Kill 10 Slimes", "slime", 10));
+            quest.AddObjective(QuestObjectiveDefinition.Create(QuestObjectiveType.EscortNPC, "Escort the merchant", "merchant"));
+            quest.AddObjective(QuestObjectiveDefinition.Create(QuestObjectiveType.CraftItem, "Craft an iron sword", "iron_sword"));
+
+            Assert.That(quest.Objectives[0].RequiredAmount, Is.EqualTo(10));
+            Assert.That(quest.Objectives[1].Type, Is.EqualTo(QuestObjectiveType.EscortNPC));
+            Assert.That(quest.Objectives[2].Matches(QuestObjectiveType.CraftItem, "iron_sword", null), Is.True);
+            Object.DestroyImmediate(quest);
+        }
         private static void Set(object target, string field, object value) => target.GetType().GetField(field, BindingFlags.Instance | BindingFlags.NonPublic).SetValue(target, value);
         private static void AddToList<T>(QuestDefinition quest, string field, T value) => ((System.Collections.Generic.List<T>)typeof(QuestDefinition).GetField(field, BindingFlags.Instance | BindingFlags.NonPublic).GetValue(quest)).Add(value);
     }

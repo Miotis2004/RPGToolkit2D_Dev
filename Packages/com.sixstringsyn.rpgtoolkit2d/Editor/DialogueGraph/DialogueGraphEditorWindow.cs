@@ -22,6 +22,9 @@ namespace SixStringSyn.RPGToolkit2D.Editor.DialogueGraph
                 using (new EditorGUI.DisabledScope(_dialogue == null))
                 {
                     if (GUILayout.Button("Add Line Node")) AddNode(DialogueNodeType.Line);
+                    if (GUILayout.Button("Add Choice Node")) AddNode(DialogueNodeType.Choice);
+                    if (GUILayout.Button("Add Quest Update Node")) AddNode(DialogueNodeType.QuestUpdate);
+                    if (GUILayout.Button("Add Reward Node")) AddNode(DialogueNodeType.Reward);
                     if (GUILayout.Button("Add Exit Node")) AddNode(DialogueNodeType.Exit);
                     if (GUILayout.Button("Validate")) Validate();
                 }
@@ -35,6 +38,8 @@ namespace SixStringSyn.RPGToolkit2D.Editor.DialogueGraph
                 EditorGUILayout.BeginVertical(EditorStyles.helpBox);
                 EditorGUILayout.LabelField(node.NodeType.ToString(), node.Text);
                 EditorGUILayout.LabelField("Speaker", node.Speaker);
+                EditorGUILayout.LabelField("Localization Key", node.LocalizationKey);
+                EditorGUILayout.LabelField("Speaker Animation", node.SpeakerAnimation);
                 EditorGUILayout.LabelField("Choices", node.Choices.Count.ToString());
                 EditorGUILayout.EndVertical();
             }
@@ -58,7 +63,8 @@ namespace SixStringSyn.RPGToolkit2D.Editor.DialogueGraph
         private void AddNode(DialogueNodeType type)
         {
             Undo.RecordObject(_dialogue, "Add Dialogue Node");
-            _dialogue.AddNode(type, type == DialogueNodeType.Exit ? string.Empty : "Speaker", type == DialogueNodeType.Exit ? "End" : "New line");
+            var text = type == DialogueNodeType.Exit ? "End" : type == DialogueNodeType.QuestUpdate ? "Quest update" : type == DialogueNodeType.Reward ? "Reward" : "New line";
+            _dialogue.AddNode(type, type == DialogueNodeType.Exit ? string.Empty : "Speaker", text);
             EditorUtility.SetDirty(_dialogue);
         }
 

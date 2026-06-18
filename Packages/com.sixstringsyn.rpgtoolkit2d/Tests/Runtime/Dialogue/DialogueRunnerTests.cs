@@ -31,5 +31,18 @@ namespace SixStringSyn.RPGToolkit2D.Tests.Runtime.Dialogue
             Assert.That(fired, Is.True);
             Object.DestroyImmediate(dialogue);
         }
+
+        [Test]
+        public void DialogueNodeStoresPresentationMetadataForAuthoring()
+        {
+            var node = new DialogueNode(DialogueNodeType.QuestUpdate, "Quest updated.");
+            node.SetPresentation("dialogue.quest.updated", speakerAnimation: "Celebrate");
+
+            Assert.That(node.NodeType, Is.EqualTo(DialogueNodeType.QuestUpdate));
+            Assert.That(node.LocalizationKey, Is.EqualTo("dialogue.quest.updated"));
+            Assert.That(node.SpeakerAnimation, Is.EqualTo("Celebrate"));
+            Assert.That(DialogueCommand.QuestEvent("found_relic").Name, Is.EqualTo("quest_event"));
+            Assert.That(DialogueCommand.QuestEvent("found_relic").Argument, Is.EqualTo("found_relic"));
+        }
     }
 }
