@@ -31,6 +31,8 @@ The package targets Unity 6 and declares Unity `6000.0` compatibility in `packag
 
 Open **Tools > RPG Toolkit > Dashboard** to validate package setup, create core content, browse definitions, and launch focused editor tools. You can also import **Basic RPG Setup** from Package Manager to add a project-local checklist for the recommended authoring flow. See `Documentation~/getting-started.md` for the first item pickup and save/load milestone.
 
+For a complete end-to-end walkthrough, follow `Documentation~/full-tutorial.md`.
+
 ## Known Limitations
 
 - Economy and crafting APIs are marked experimental for the 1.0.0 release candidate and may receive compatibility-breaking refinements.
