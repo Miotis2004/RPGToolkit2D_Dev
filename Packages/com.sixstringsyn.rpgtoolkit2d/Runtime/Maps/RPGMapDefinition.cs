@@ -153,6 +153,168 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Maps
             }
         }
 
+        public void Configure(Vector2Int size, RPGTilesetDefinition tileset = null)
+        {
+            _size = new Vector2Int(Mathf.Max(1, size.x), Mathf.Max(1, size.y));
+            _tileset = tileset;
+            MigrateExpandedMapData();
+        }
+
+        public void SetTileset(RPGTilesetDefinition tileset) => _tileset = tileset;
+
+        public RPGMapLayer AddLayer(string displayName = "Layer", RPGMapLayerKind kind = RPGMapLayerKind.Ground)
+        {
+            MigrateExpandedMapData();
+            var baseName = string.IsNullOrWhiteSpace(displayName) ? "Layer" : displayName.Trim();
+            var layer = new RPGMapLayer
+            {
+                layerId = GenerateUniqueLayerId(baseName),
+                displayName = baseName,
+                kind = kind,
+                renderOrder = _layers.Count == 0 ? 0 : _layers.Max(existing => existing?.renderOrder ?? 0) + 1,
+                visible = true,
+                opacity = 1f,
+                tiles = new List<RPGMapTile>()
+            };
+            _layers.Add(layer);
+            return layer;
+        }
+
+        public bool RemoveLayer(string layerId)
+        {
+            var layer = FindLayer(layerId);
+            return layer != null && _layers.Remove(layer);
+        }
+
+        public RPGMapLayer DuplicateLayer(string layerId)
+        {
+            var source = FindLayer(layerId);
+            if (source == null) return null;
+            var duplicate = new RPGMapLayer
+            {
+                layerId = GenerateUniqueLayerId($"{source.layerId}_Copy"),
+                displayName = $"{source.displayName} Copy",
+                renderOrder = _layers.Count == 0 ? 0 : _layers.Max(existing => existing?.renderOrder ?? 0) + 1,
+                visible = source.visible,
+                locked = source.locked,
+                opacity = source.opacity,
+                kind = source.kind,
+                unityTilemapTargetName = source.unityTilemapTargetName,
+                tiles = source.tiles?.Select(CloneTile).ToList() ?? new List<RPGMapTile>()
+            };
+            _layers.Add(duplicate);
+            return duplicate;
+        }
+
+        public void MoveLayer(string layerId, int newIndex)
+        {
+            var layer = FindLayer(layerId);
+            if (layer == null) return;
+            _layers.Remove(layer);
+            _layers.Insert(Mathf.Clamp(newIndex, 0, _layers.Count), layer);
+            for (var i = 0; i < _layers.Count; i++)
+                if (_layers[i] != null) _layers[i].renderOrder = i;
+        }
+
+        public bool PaintTile(string layerId, Vector2Int position, string tileId, int rotationDegrees = 0, bool flipX = false, bool flipY = false)
+        {
+            if (!IsInBounds(position) || string.IsNullOrWhiteSpace(tileId)) return false;
+            var layer = FindLayer(layerId);
+            if (layer == null || layer.locked) return false;
+            if (layer.tiles == null) layer.tiles = new List<RPGMapTile>();
+            layer.tiles.RemoveAll(tile => tile != null && tile.position == position);
+            layer.tiles.Add(new RPGMapTile { position = position, tileId = tileId, rotationDegrees = rotationDegrees, flipX = flipX, flipY = flipY });
+            return true;
+        }
+
+        public bool EraseTile(string layerId, Vector2Int position)
+        {
+            var layer = FindLayer(layerId);
+            if (layer?.tiles == null || layer.locked) return false;
+            return layer.tiles.RemoveAll(tile => tile != null && tile.position == position) > 0;
+        }
+
+        public int FillRectangle(string layerId, RectInt bounds, string tileId)
+        {
+            var changed = 0;
+            foreach (var position in EnumerateClamped(bounds))
+                if (PaintTile(layerId, position, tileId)) changed++;
+            return changed;
+        }
+
+        public int FloodFill(string layerId, Vector2Int origin, string tileId)
+        {
+            var layer = FindLayer(layerId);
+            if (layer == null || layer.locked || !IsInBounds(origin) || string.IsNullOrWhiteSpace(tileId)) return 0;
+            var targetTileId = GetLayerTile(layerId, origin)?.tileId;
+            if (string.Equals(targetTileId, tileId, StringComparison.OrdinalIgnoreCase)) return 0;
+            var changed = 0;
+            var queue = new Queue<Vector2Int>();
+            var visited = new HashSet<Vector2Int>();
+            queue.Enqueue(origin);
+            while (queue.Count > 0)
+            {
+                var position = queue.Dequeue();
+                if (!visited.Add(position) || !IsInBounds(position)) continue;
+                var currentTileId = GetLayerTile(layerId, position)?.tileId;
+                if (!string.Equals(currentTileId, targetTileId, StringComparison.OrdinalIgnoreCase)) continue;
+                if (PaintTile(layerId, position, tileId)) changed++;
+                queue.Enqueue(new Vector2Int(position.x + 1, position.y));
+                queue.Enqueue(new Vector2Int(position.x - 1, position.y));
+                queue.Enqueue(new Vector2Int(position.x, position.y + 1));
+                queue.Enqueue(new Vector2Int(position.x, position.y - 1));
+            }
+            return changed;
+        }
+
+        public int ReplaceTile(string layerId, string oldTileId, string newTileId)
+        {
+            var layer = FindLayer(layerId);
+            if (layer?.tiles == null || layer.locked || string.IsNullOrWhiteSpace(newTileId)) return 0;
+            var changed = 0;
+            foreach (var tile in layer.tiles)
+            {
+                if (tile == null || !string.Equals(tile.tileId, oldTileId, StringComparison.OrdinalIgnoreCase)) continue;
+                tile.tileId = newTileId;
+                changed++;
+            }
+            return changed;
+        }
+
+        private string GenerateUniqueLayerId(string displayName)
+        {
+            var stem = new string((displayName ?? "Layer").Select(ch => char.IsLetterOrDigit(ch) ? ch : '_').ToArray()).Trim('_');
+            if (string.IsNullOrWhiteSpace(stem)) stem = "Layer";
+            var candidate = stem;
+            var index = 1;
+            while (FindLayer(candidate) != null) candidate = $"{stem}_{++index}";
+            return candidate;
+        }
+
+        private static RPGMapTile CloneTile(RPGMapTile tile) => tile == null ? null : new RPGMapTile
+        {
+            position = tile.position,
+            tileId = tile.tileId,
+            rotationDegrees = tile.rotationDegrees,
+            flipX = tile.flipX,
+            flipY = tile.flipY,
+            overrideCollision = tile.overrideCollision,
+            blocksMovementOverride = tile.blocksMovementOverride,
+            overrideMetadata = tile.overrideMetadata?.Select(entry => entry == null ? null : new RPGMapMetadataEntry { key = entry.key, value = entry.value }).ToList() ?? new List<RPGMapMetadataEntry>()
+        };
+
+        private IEnumerable<Vector2Int> EnumerateClamped(RectInt bounds)
+        {
+            var xMin = Mathf.Max(0, bounds.xMin);
+            var yMin = Mathf.Max(0, bounds.yMin);
+            var xMax = Mathf.Min(_size.x, bounds.xMax);
+            var yMax = Mathf.Min(_size.y, bounds.yMax);
+            for (var y = yMin; y < yMax; y++)
+                for (var x = xMin; x < xMax; x++)
+                    yield return new Vector2Int(x, y);
+        }
+
+
         public IEnumerable<RPGMapZone> GetZonesAt(Vector2Int position, RPGMapZoneKind? kind = null, string tag = null)
         {
             foreach (var zone in _zones)
