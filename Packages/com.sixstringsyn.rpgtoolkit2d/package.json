@@ -22,6 +22,11 @@
       "displayName": "Basic RPG Setup",
       "description": "Lightweight onboarding sample with the recommended first package validation and content-authoring workflow.",
       "path": "Samples~/BasicRPG"
+    },
+    {
+      "displayName": "Map Workflow Tutorial",
+      "description": "Phase 9 tutorial sample with runtime scripts for loading maps, querying zones and blockers, enumerating placed objects, and logging transitions.",
+      "path": "Samples~/MapWorkflow"
     }
   ],
   "dependencies": {
