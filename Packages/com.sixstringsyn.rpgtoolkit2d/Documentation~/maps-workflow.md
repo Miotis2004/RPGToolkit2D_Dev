@@ -114,7 +114,7 @@ Use `RPGMapObjectSpawner.BuildSpawnDescriptors` when you need deterministic, tes
 
 ```csharp
 using UnityEngine;
-using SixStringSyn.RPGToolkit2D.Maps;
+using SixStringSyn.RPGToolkit2D.Runtime.Maps;
 
 public sealed class MapQueryExamples : MonoBehaviour
 {

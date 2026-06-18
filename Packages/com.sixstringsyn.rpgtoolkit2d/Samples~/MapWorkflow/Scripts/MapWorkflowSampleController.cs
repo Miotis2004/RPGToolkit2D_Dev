@@ -1,5 +1,5 @@
 using UnityEngine;
-using SixStringSyn.RPGToolkit2D.Maps;
+using SixStringSyn.RPGToolkit2D.Runtime.Maps;
 
 namespace SixStringSyn.RPGToolkit2D.Samples.MapWorkflow
 {
