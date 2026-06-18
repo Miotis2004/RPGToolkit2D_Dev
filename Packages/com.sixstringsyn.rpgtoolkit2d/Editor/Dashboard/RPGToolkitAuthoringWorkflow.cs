@@ -8,6 +8,9 @@ using SixStringSyn.RPGToolkit2D.Runtime.Core;
 using SixStringSyn.RPGToolkit2D.Runtime.Dialogue;
 using SixStringSyn.RPGToolkit2D.Runtime.Items;
 using SixStringSyn.RPGToolkit2D.Runtime.Loot;
+using SixStringSyn.RPGToolkit2D.Runtime.Data;
+using SixStringSyn.RPGToolkit2D.Runtime.Foundation;
+using SixStringSyn.RPGToolkit2D.Runtime.Maps;
 using SixStringSyn.RPGToolkit2D.Runtime.NPCs;
 using SixStringSyn.RPGToolkit2D.Runtime.Quests;
 using SixStringSyn.RPGToolkit2D.Runtime.Vendors;
@@ -39,14 +42,14 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Dashboard
 
     public sealed class RPGToolkitAssetBrowserEntry
     {
-        public RPGToolkitAssetBrowserEntry(RPGObject asset, string path, bool duplicateId)
+        public RPGToolkitAssetBrowserEntry(UnityEngine.Object asset, string path, bool duplicateId)
         {
             Asset = asset;
             Path = path;
             DuplicateId = duplicateId;
         }
 
-        public RPGObject Asset { get; }
+        public UnityEngine.Object Asset { get; }
         public string Path { get; }
         public bool DuplicateId { get; }
     }
@@ -65,10 +68,26 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Dashboard
             new RPGToolkitAuthoringSection("Abilities", "Create reusable abilities for combat, interactions, and custom effects.", typeof(AbilityDefinition), "NewAbilityDefinition.asset", "Tools/RPG Toolkit/Ability Editor", EditorToolsDocumentationPath),
             new RPGToolkitAuthoringSection("Vendors", "Configure shops, prices, stock, buy/sell rules, and inventory integration.", typeof(VendorDefinition), "NewVendorDefinition.asset", "Tools/RPG Toolkit/Vendor Editor", EditorToolsDocumentationPath),
             new RPGToolkitAuthoringSection("Loot Tables", "Define weighted drops for chests, encounters, rewards, and vendors.", typeof(LootTableDefinition), "NewLootTableDefinition.asset", "Tools/RPG Toolkit/Loot Table Editor", EditorToolsDocumentationPath),
-            new RPGToolkitAuthoringSection("NPCs", "Create NPC metadata, dialogue links, party hooks, and world-state keys.", typeof(NPCDefinition), "NewNPCDefinition.asset", "Assets/Create/RPG Toolkit/NPC Definition", EditorToolsDocumentationPath)
+            new RPGToolkitAuthoringSection("NPCs", "Create NPC metadata, dialogue links, party hooks, and world-state keys.", typeof(NPCDefinition), "NewNPCDefinition.asset", "Assets/Create/RPG Toolkit/NPC Definition", EditorToolsDocumentationPath),
+            new RPGToolkitAuthoringSection("Maps", "Author tile layers, zones, entrances, exits, object placements, and transitions.", typeof(RPGMapDefinition), "NewMapDefinition.asset", "Tools/RPG Toolkit/Maps/Map Editor", EditorToolsDocumentationPath),
+            new RPGToolkitAuthoringSection("Tilesets", "Bridge sprite frames to tile metadata, collision defaults, palettes, and map painting.", typeof(RPGTilesetDefinition), "NewTilesetDefinition.asset", "Tools/RPG Toolkit/Maps/Tileset Editor", EditorToolsDocumentationPath),
+            new RPGToolkitAuthoringSection("Sprite Sheets", "Manage source textures, generated frame metadata, tags, groups, and tile defaults.", typeof(RPGSpriteSheetAsset), "NewSpriteSheetAsset.asset", "Tools/RPG Toolkit/Maps/Sprite Sheet Editor", EditorToolsDocumentationPath),
+            new RPGToolkitAuthoringSection("Sprite Sheet Profiles", "Define slicing rules, grid dimensions, naming patterns, pivots, and pixels per unit.", typeof(RPGSpriteSheetProfile), "NewSpriteSheetProfile.asset", "Assets/Create/RPG Toolkit/Foundation/Sprite Sheet Profile", EditorToolsDocumentationPath)
         };
 
         public static IReadOnlyList<RPGToolkitAuthoringSection> Sections => _sections;
+
+        [MenuItem("Tools/RPG Toolkit/Maps/Create Map Definition")]
+        public static void CreateMapDefinition() => CreateAsset(Sections.First(section => section.AssetType == typeof(RPGMapDefinition)));
+
+        [MenuItem("Tools/RPG Toolkit/Maps/Create Tileset Definition")]
+        public static void CreateTilesetDefinition() => CreateAsset(Sections.First(section => section.AssetType == typeof(RPGTilesetDefinition)));
+
+        [MenuItem("Tools/RPG Toolkit/Maps/Create Sprite Sheet Asset")]
+        public static void CreateSpriteSheetAsset() => CreateAsset(Sections.First(section => section.AssetType == typeof(RPGSpriteSheetAsset)));
+
+        [MenuItem("Tools/RPG Toolkit/Maps/Create Sprite Sheet Profile")]
+        public static void CreateSpriteSheetProfile() => CreateAsset(Sections.First(section => section.AssetType == typeof(RPGSpriteSheetProfile)));
 
         public static UnityEngine.Object CreateAsset(RPGToolkitAuthoringSection section, string folder = DefaultAssetFolder)
         {
@@ -93,14 +112,14 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Dashboard
             foreach (var guid in guids)
             {
                 var path = AssetDatabase.GUIDToAssetPath(guid);
-                var asset = AssetDatabase.LoadAssetAtPath(path, section.AssetType) as RPGObject;
+                var asset = AssetDatabase.LoadAssetAtPath(path, section.AssetType);
                 if (asset == null) continue;
                 if (!MatchesSearch(asset, path, search)) continue;
-                if (!asset.Id.IsEmpty) ids[asset.Id] = ids.TryGetValue(asset.Id, out var count) ? count + 1 : 1;
+                if (asset is RPGObject rpgAsset && !rpgAsset.Id.IsEmpty) ids[rpgAsset.Id] = ids.TryGetValue(rpgAsset.Id, out var count) ? count + 1 : 1;
                 entries.Add(new RPGToolkitAssetBrowserEntry(asset, path, false));
             }
 
-            return entries.Select(entry => new RPGToolkitAssetBrowserEntry(entry.Asset, entry.Path, !entry.Asset.Id.IsEmpty && ids.TryGetValue(entry.Asset.Id, out var count) && count > 1)).ToList();
+            return entries.Select(entry => new RPGToolkitAssetBrowserEntry(entry.Asset, entry.Path, entry.Asset is RPGObject rpgAsset && !rpgAsset.Id.IsEmpty && ids.TryGetValue(rpgAsset.Id, out var count) && count > 1)).ToList();
         }
 
         public static IReadOnlyList<PackageValidationResult> ValidateProjectSetup()
@@ -119,10 +138,12 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Dashboard
 
         public static void OpenDocumentation(string path) => EditorUtility.OpenWithDefaultApp(path);
 
-        private static bool MatchesSearch(RPGObject asset, string path, string search)
+        private static bool MatchesSearch(UnityEngine.Object asset, string path, string search)
         {
             if (string.IsNullOrWhiteSpace(search)) return true;
-            return asset.name.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0 || asset.DisplayName.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0 || path.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0 || asset.Id.ToString().IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0;
+            var displayName = asset is RPGObject rpgAsset ? rpgAsset.DisplayName : asset.name;
+            var id = asset is RPGObject objectWithId ? objectWithId.Id.ToString() : string.Empty;
+            return asset.name.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0 || displayName.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0 || path.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0 || id.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         private static PackageValidationResult ValidateManifestDependency(string dependency, bool required)
