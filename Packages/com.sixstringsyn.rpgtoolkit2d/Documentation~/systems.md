@@ -295,3 +295,21 @@ Phase 9 adds presentation-agnostic combat primitives. `DamageCalculator` accepts
 `LootTableDefinition` contains weighted item drops with quantity ranges; `LootRoller.Roll` accepts a deterministic `System.Random` seed for repeatable tests or roguelike runs. `VendorDefinition` and `VendorShop` provide stock, buy/sell pricing, inventory integration, and restock hooks for shopkeepers.
 
 Authoring menu entries are available under **Tools > RPG Toolkit** for combat tuning, abilities, loot tables, and vendors.
+
+## Phase 10 World State, Party, Companions, NPCs, and Crafting
+
+Phase 10 adds persistent world state, party roster management, companion recruitment state, NPC definitions, and inventory-backed crafting. Use dot-separated world state keys such as `quest.mira_helped`, `door.forest_gate.unlocked`, and `counter.wolf_kills` so saves remain readable and debugger-friendly. `WorldStateCondition` can gate dialogue choices, quest objectives, vendors, scene transitions, or custom adapters by checking existence, equality, and numeric thresholds.
+
+`PartyRoster` tracks all recruited members, the active party subset, companion relationship values, and recruitment hooks. A companion can be recruited only after its supplied world-state conditions pass, then the roster can be captured through `PartySaveContributor` alongside `WorldStateSaveContributor`.
+
+`NPCDefinition` groups a character definition with optional dialogue, vendor data, and recruitment metadata. Scene objects can attach `NPCComponent` to expose this definition while existing interaction and dialogue adapters continue to handle presentation.
+
+`CraftingRecipeDefinition` defines ingredients, outputs, an optional station id such as `alchemy`, and an optional currency cost. `CraftingSystem.Validate` checks station, currency, ingredients, and outputs before `Craft` removes ingredients and adds outputs to the same `InventoryContainer`; UI can implement `ICraftingPresenter` to display validation results and crafted feedback.
+
+Examples:
+
+- **Recruited companion:** set `quest.mira_helped=true`, evaluate that key in a `WorldStateCondition`, then call `PartyRoster.Recruit(mira, worldState, conditions)`.
+- **Locked door flag:** store `door.forest_gate.unlocked=false` or clear/set the key when a lever changes state, then gate door interaction with `WorldStateCondition`.
+- **Crafting station:** create a recipe with `StationId` set to `alchemy`; it will validate only when the active station passes the same id.
+
+Save/load behavior is contributor-based. Register `WorldStateSaveContributor` and `PartySaveContributor` with `SaveGameService` so these systems write independent JSON payloads into the normal game save.

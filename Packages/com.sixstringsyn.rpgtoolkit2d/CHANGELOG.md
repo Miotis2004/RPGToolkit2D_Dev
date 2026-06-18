@@ -4,6 +4,10 @@ All notable changes to RPG Toolkit 2D will be documented in this file.
 
 ## [0.1.0]
 
+### Phase 10 - World State, Party, Companions, NPCs, and Crafting
+
+- Added persistent world state values and conditions, party roster and companion recruitment state, NPC definitions/components, inventory-backed crafting recipes, save contributors, a world state debugger window, tests, and documentation.
+
 ### Phase 9 - Abilities, Combat, Status Effects, Loot, and Vendors
 
 - Added reusable combat damage primitives, targeting and hit-detection contracts, ability execution, melee/projectile adapters, status effect runtime, loot tables, vendor shops, and Phase 9 authoring windows.
