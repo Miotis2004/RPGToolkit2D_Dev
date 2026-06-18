@@ -1,3 +1,4 @@
+using SixStringSyn.RPGToolkit2D.Runtime.Abilities;
 using SixStringSyn.RPGToolkit2D.Runtime.Combat;
 using SixStringSyn.RPGToolkit2D.Runtime.Core;
 using SixStringSyn.RPGToolkit2D.Runtime.Stats;
