@@ -9,9 +9,10 @@ Menu path: **Tools > RPG Toolkit > Dashboard**
 The dashboard includes:
 
 - **Quick Start** guidance for validating setup, creating an authoring folder, and opening documentation.
-- **Create RPG Content** cards for characters, items, quests, dialogue, abilities, vendors, loot tables, NPC definitions, maps, tilesets, sprite sheets, and sprite sheet profiles.
-- **Database Browser** search for authored assets with quick ping/open actions and duplicate RPG ID warnings.
+- **Create RPG Content** cards for characters, items, quests, dialogue, abilities, vendors, loot tables, NPC definitions, maps, tilesets, sprite sheets, and sprite sheet profiles. Every card creates the matching ScriptableObject in the selected authoring folder with a generated RPG ID when the asset type supports IDs.
+- **Database Browser** search for authored assets with quick ping/open actions and duplicate RPG ID warnings. Search matches asset names, display names, project paths, and stable RPG IDs.
 - **Focused Tools** shortcuts for the Quest Editor, Dialogue Graph Editor, Item Database, Save Data Debugger, World State Debugger, Map Editor, Tileset Editor, Sprite Sheet Editor, Map Connections, and package samples folder.
+- **Validation Center** aggregation for content diagnostics with severity filtering, diagnostic-code filtering, Markdown export, and safe repair previews for deterministic fixes such as duplicate RPG IDs.
 - **Project Setup and Validation** checks for package foundation files, required packages, recommended sample packages, and the default `Assets/RPGToolkit2D` authoring folder.
 - **Maps, Tilesets, and Sprite Sheets** project-wide validation for sprite sheets, tilesets, maps, map graph connections, duplicate map workflow IDs, and safe repair utilities.
 
@@ -22,7 +23,7 @@ The dashboard includes:
 3. Use a content card such as **Create Characters** or **Create Items** to create the first asset.
 4. Search the asset in the **Database Browser** and confirm it has a unique RPG ID.
 5. Open a focused tool when a system needs a deeper workflow, such as the Quest Editor for objectives or the Dialogue Graph for branching conversations.
-6. Review **Project Setup and Validation** before importing samples or sharing a project.
+6. Run **Validation** from the dashboard before importing samples, sharing content, or preparing a release.
 
 ## Content Creation Cards
 
@@ -112,6 +113,24 @@ The Database Browser filters assets by type and search text. Search matches asse
 - **Open** to select the asset for inspection.
 
 Use duplicate ID warnings before committing authored content. Stable unique IDs are required for save data, quests, dialogue commands, references, and external tools.
+
+## Validation Center
+
+Use the dashboard **Validation** tab as the release-readiness gate for authored content. **Validate All RPG Content** gathers diagnostics from the card-specific validators for characters, items, quests, dialogue, abilities, vendors, loot tables, NPCs, maps, tilesets, sprite sheets, and sprite sheet profiles where validation is available. The result list can be filtered by error, warning, informational status, or diagnostic code so teams can isolate a single class of issue before handoff.
+
+Each diagnostic records the affected card, source asset, severity, code, message, and optional safe repair preview. Safe repairs are limited to deterministic changes, such as assigning a new generated RPG ID to a duplicate asset; destructive content edits remain manual. Use **Export Markdown** to attach a validation report to release reviews, QA notes, or pull requests.
+
+## Dashboard Release Readiness
+
+Before shipping content that uses the toolkit:
+
+1. Open **Tools > RPG Toolkit > Dashboard** and refresh asset queries.
+2. Confirm every required content card has the expected authored assets and no duplicate ID warnings.
+3. Run project setup validation and resolve required package or authoring-folder failures.
+4. Run the Validation Center and fix all errors. Review warnings with design/QA before accepting them.
+5. Run map workflow validation if the project ships tile maps, tilesets, sprite sheets, or map connections.
+6. Export the validation report and keep it with release notes.
+7. Run the Unity editor test suite in the target Unity version before publishing the package or game content.
 
 ## Focused Editor Windows
 

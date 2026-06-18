@@ -29,7 +29,9 @@ The package targets Unity 6 and declares Unity `6000.0` compatibility in `packag
 
 ## First Workflow
 
-Open **Tools > RPG Toolkit > Dashboard** to validate package setup, create core content, browse definitions, and launch focused editor tools. You can also import **Basic RPG Setup** from Package Manager to add a project-local checklist for the recommended authoring flow. See `Documentation~/getting-started.md` for the first item pickup and save/load milestone.
+Open **Tools > RPG Toolkit > Dashboard** to validate package setup, create core content, browse definitions, launch focused editor tools, and run the Validation Center before release. The completed dashboard covers creation cards for the core RPG content types, database search with duplicate ID detection, focused editor launch metadata, documentation/sample links, project setup checks, map workflow validation, Markdown validation export, and safe repair previews for deterministic issues.
+
+You can also import **Basic RPG Setup** from Package Manager to add a project-local checklist for the recommended authoring flow. See `Documentation~/getting-started.md` for the first item pickup and save/load milestone.
 
 For a complete end-to-end walkthrough, follow `Documentation~/full-tutorial.md`.
 
