@@ -66,7 +66,7 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Windows
 
             var useActionProperty = serialized.FindProperty("_useAction");
             var useAction = useActionProperty?.objectReferenceValue;
-            if (useActionProperty != null && useAction == null && useActionProperty.objectReferenceInstanceIDValue != 0) result.AddError("RPG_ITEM_BROKEN_USE_ACTION", "Item use action reference is broken or missing from the project.", item.Id);
+            if (HasBrokenObjectReference(useActionProperty)) result.AddError("RPG_ITEM_BROKEN_USE_ACTION", "Item use action reference is broken or missing from the project.", item.Id);
             if (item.ItemType == ItemType.Consumable && useAction == null) result.AddWarning("RPG_ITEM_CONSUMABLE_NO_USE_ACTION", "Consumable item has no use action assigned.", item.Id);
             if ((item.ItemType == ItemType.Weapon || item.ItemType == ItemType.Armor) && item.AllowedEquipmentSlots.Count == 0) result.AddWarning("RPG_ITEM_EQUIPMENT_NO_SLOTS", "Equipment item has no allowed equipment slots.", item.Id);
 
@@ -77,6 +77,15 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Windows
             }
 
             return result;
+        }
+
+        private static bool HasBrokenObjectReference(SerializedProperty property)
+        {
+            if (property == null || property.propertyType != SerializedPropertyType.ObjectReference || property.objectReferenceValue != null) return false;
+
+            var objectReferenceStringValue = property.GetType().GetProperty("objectReferenceStringValue");
+            var referenceDescription = objectReferenceStringValue?.GetValue(property) as string;
+            return !string.IsNullOrEmpty(referenceDescription) && referenceDescription != "None";
         }
 
         public static int RepairDuplicateItemIds(IEnumerable<ItemDefinition> items)

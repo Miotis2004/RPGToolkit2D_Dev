@@ -23,7 +23,7 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Windows
                 return;
             }
 
-            var loader = FindObjectOfType<RPGMapLoader>() ?? new GameObject("RPG Map Loader").AddComponent<RPGMapLoader>();
+            var loader = Object.FindFirstObjectByType<RPGMapLoader>() ?? new GameObject("RPG Map Loader").AddComponent<RPGMapLoader>();
             loader.LoadMap(map);
             Selection.activeGameObject = loader.LoadedMap?.Root;
             if (loader.LoadedMap?.Root != null) EditorGUIUtility.PingObject(loader.LoadedMap.Root);
@@ -54,7 +54,7 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Windows
 
         private void LoadPreview()
         {
-            _loader = FindObjectOfType<RPGMapLoader>() ?? new GameObject("RPG Map Loader").AddComponent<RPGMapLoader>();
+            _loader = Object.FindFirstObjectByType<RPGMapLoader>() ?? new GameObject("RPG Map Loader").AddComponent<RPGMapLoader>();
             _loader.CollisionMode = _collisionMode;
             _loader.LoadMap(_map);
             Selection.activeGameObject = _loader.LoadedMap.Root;
