@@ -87,9 +87,9 @@ namespace SixStringSyn.RPGToolkit2D.Editor
         private static void ValidateMapGraphConnections(RPGMapProjectValidationReport report) { foreach (var a in FindAssets<RPGMapDefinition>()) foreach (var exit in a.Asset.Exits.Where(e => e != null && e.targetMap != null && !string.IsNullOrWhiteSpace(e.targetEntranceId) && e.targetMap.ResolveEntrance(e.targetEntranceId) == null)) report.Add(RPGMapValidationAssetKind.MapGraph, a.Asset, a.Path, new RPGValidationMessage(RPGValidationSeverity.Error, "RPG_MAPGRAPH_MISSING_ENTRANCE", $"{a.Asset.name}/{exit.exitId} targets {exit.targetMap.name} entrance {exit.targetEntranceId}, but it does not exist.", a.Asset.Id)); }
         private static void ValidateDuplicateAssetIds(RPGMapProjectValidationReport report)
         {
-            var assets = FindAssets<RPGSpriteSheetAsset>().Select(a => ((RPGObject)a.Asset, a.Path))
-                .Concat(FindAssets<RPGTilesetDefinition>().Select(a => ((RPGObject)a.Asset, a.Path)))
-                .Concat(FindAssets<RPGMapDefinition>().Select(a => ((RPGObject)a.Asset, a.Path)))
+            var assets = FindAssets<RPGSpriteSheetAsset>().Select(a => (Asset: (RPGObject)a.Asset, Path: a.Path))
+                .Concat(FindAssets<RPGTilesetDefinition>().Select(a => (Asset: (RPGObject)a.Asset, Path: a.Path)))
+                .Concat(FindAssets<RPGMapDefinition>().Select(a => (Asset: (RPGObject)a.Asset, Path: a.Path)))
                 .Where(a => !a.Asset.Id.IsEmpty)
                 .ToList();
             foreach (var group in assets.GroupBy(a => a.Asset.Id, a => a).Where(g => g.Count() > 1))
