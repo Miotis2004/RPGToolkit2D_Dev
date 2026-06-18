@@ -10,6 +10,9 @@ using SixStringSyn.RPGToolkit2D.Runtime.Foundation;
 using SixStringSyn.RPGToolkit2D.Runtime.Maps;
 using SixStringSyn.RPGToolkit2D.Runtime.Dialogue;
 using SixStringSyn.RPGToolkit2D.Runtime.NPCs;
+using SixStringSyn.RPGToolkit2D.Runtime.Abilities;
+using SixStringSyn.RPGToolkit2D.Runtime.Vendors;
+using SixStringSyn.RPGToolkit2D.Runtime.Loot;
 using SixStringSyn.RPGToolkit2D.Editor;
 using SixStringSyn.RPGToolkit2D.Editor.Windows;
 using UnityEditor;
@@ -311,6 +314,49 @@ namespace SixStringSyn.RPGToolkit2D.Tests.Editor
             Assert.That(System.Linq.Enumerable.Any(result.Messages, message => message.Code == "RPG_ITEM_DUPLICATE_ID"), Is.True);
             Assert.That(System.Linq.Enumerable.Any(result.Messages, message => message.Code == "RPG_ITEM_MISSING_DISPLAY_NAME"), Is.True);
         }
+
+        [Test]
+        public void Phase7AbilityVendorAndLootEditorsAreDashboardTools()
+        {
+            var abilitySection = System.Linq.Enumerable.First(RPGToolkitAuthoringWorkflow.Sections, section => section.AssetType == typeof(AbilityDefinition));
+            var vendorSection = System.Linq.Enumerable.First(RPGToolkitAuthoringWorkflow.Sections, section => section.AssetType == typeof(VendorDefinition));
+            var lootSection = System.Linq.Enumerable.First(RPGToolkitAuthoringWorkflow.Sections, section => section.AssetType == typeof(LootTableDefinition));
+
+            Assert.That(abilitySection.Capability.FocusedEditorStatus, Is.EqualTo(RPGToolkitDashboardCapabilityStatus.Complete));
+            Assert.That(vendorSection.Capability.FocusedEditorStatus, Is.EqualTo(RPGToolkitDashboardCapabilityStatus.Complete));
+            Assert.That(lootSection.Capability.FocusedEditorStatus, Is.EqualTo(RPGToolkitDashboardCapabilityStatus.Complete));
+            Assert.That(abilitySection.Capability.ValidationStatus, Is.EqualTo(RPGToolkitDashboardCapabilityStatus.Complete));
+            Assert.That(vendorSection.Capability.ValidationStatus, Is.EqualTo(RPGToolkitDashboardCapabilityStatus.Complete));
+            Assert.That(lootSection.Capability.ValidationStatus, Is.EqualTo(RPGToolkitDashboardCapabilityStatus.Complete));
+        }
+
+        [Test]
+        public void Phase7EditorsReportDomainValidationIssues()
+        {
+            var abilitySection = System.Linq.Enumerable.First(RPGToolkitAuthoringWorkflow.Sections, section => section.AssetType == typeof(AbilityDefinition));
+            var vendorSection = System.Linq.Enumerable.First(RPGToolkitAuthoringWorkflow.Sections, section => section.AssetType == typeof(VendorDefinition));
+            var lootSection = System.Linq.Enumerable.First(RPGToolkitAuthoringWorkflow.Sections, section => section.AssetType == typeof(LootTableDefinition));
+            var ability = RPGToolkitAuthoringWorkflow.CreateAsset(abilitySection, TestFolder) as AbilityDefinition;
+            var abilityDuplicate = RPGToolkitAuthoringWorkflow.CreateAsset(abilitySection, TestFolder) as AbilityDefinition;
+            var vendor = RPGToolkitAuthoringWorkflow.CreateAsset(vendorSection, TestFolder) as VendorDefinition;
+            var loot = RPGToolkitAuthoringWorkflow.CreateAsset(lootSection, TestFolder) as LootTableDefinition;
+            abilityDuplicate.SetId(ability.Id);
+            SetSerialized(ability, "_displayName", string.Empty);
+            SetSerialized(vendor, "_displayName", string.Empty);
+            SetSerialized(loot, "_displayName", string.Empty);
+
+            var abilityResult = AbilityEditorWindow.ValidateAbility(ability, new[] { ability, abilityDuplicate });
+            var vendorResult = VendorEditorWindow.ValidateVendor(vendor, new[] { vendor });
+            var lootResult = LootTableEditorWindow.ValidateLootTable(loot, new[] { loot });
+
+            Assert.That(System.Linq.Enumerable.Any(abilityResult.Messages, message => message.Code == "RPG_ABILITY_DUPLICATE_ID"), Is.True);
+            Assert.That(System.Linq.Enumerable.Any(abilityResult.Messages, message => message.Code == "RPG_ABILITY_MISSING_DISPLAY_NAME"), Is.True);
+            Assert.That(System.Linq.Enumerable.Any(vendorResult.Messages, message => message.Code == "RPG_VENDOR_EMPTY_STOCK"), Is.True);
+            Assert.That(System.Linq.Enumerable.Any(vendorResult.Messages, message => message.Code == "RPG_VENDOR_MISSING_DISPLAY_NAME"), Is.True);
+            Assert.That(System.Linq.Enumerable.Any(lootResult.Messages, message => message.Code == "RPG_LOOT_TABLE_LOOT_EMPTY"), Is.True);
+            Assert.That(System.Linq.Enumerable.Any(lootResult.Messages, message => message.Code == "RPG_LOOT_TABLE_MISSING_DISPLAY_NAME"), Is.True);
+        }
+
 
         [Test]
         public void AuthoringSectionsCoverPhase8MapWorkflowTypes()
