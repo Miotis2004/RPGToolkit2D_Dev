@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
-using UnityEditor.PackageManager;
+using UnityPackageInfo = UnityEditor.PackageManager.PackageInfo;
 
 namespace SixStringSyn.RPGToolkit2D.Editor
 {
@@ -54,7 +54,7 @@ namespace SixStringSyn.RPGToolkit2D.Editor
 
         private static PackageValidationResult ValidatePackageInfo()
         {
-            var packageInfo = PackageInfo.FindForPackageName(PackageName);
+            var packageInfo = UnityPackageInfo.FindForPackageName(PackageName);
             if (packageInfo == null)
             {
                 return new PackageValidationResult("Package metadata", false, $"Package '{PackageName}' was not found by Package Manager.");
