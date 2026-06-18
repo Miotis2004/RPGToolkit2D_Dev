@@ -137,6 +137,8 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Dashboard
         public const string DefaultAssetFolder = "Assets/RPGToolkit2D";
         public const string EditorToolsDocumentationPath = RPGToolkitPackageValidator.PackagePath + "/Documentation~/editor-tools.md";
         private const string EditorToolsDocumentationAnchorPrefix = EditorToolsDocumentationPath + "#";
+        private const double AssetCacheLifetimeSeconds = 5d;
+        private static readonly Dictionary<Type, CachedAssetEntries> _assetCache = new Dictionary<Type, CachedAssetEntries>();
 
         private static readonly IReadOnlyList<RPGToolkitAuthoringSection> _sections = new List<RPGToolkitAuthoringSection>
         {
@@ -157,6 +159,8 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Dashboard
         public static IReadOnlyList<RPGToolkitAuthoringSection> Sections => _sections;
 
         public static IReadOnlyList<RPGToolkitDashboardCapability> Capabilities => _sections.Select(section => section.Capability).ToList();
+
+        public static void ClearAssetQueryCache() => _assetCache.Clear();
 
         private static RPGToolkitAuthoringSection CreateSection(string title, string description, Type assetType, string defaultFileName, string menuPath, string documentationPath, string setupHint, bool warnWhenEmpty, RPGToolkitDashboardCapabilityStatus focusedEditorStatus, RPGToolkitDashboardCapabilityStatus validationStatus, RPGToolkitDashboardCapabilityStatus documentationStatus, RPGToolkitDashboardCapabilityStatus runtimeIntegrationStatus, string notes, Action openEditor = null)
         {
@@ -186,6 +190,7 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Dashboard
             var path = AssetDatabase.GenerateUniqueAssetPath(Path.Combine(folder, section.DefaultFileName).Replace('\\', '/'));
             AssetDatabase.CreateAsset(asset, path);
             AssetDatabase.SaveAssets();
+            ClearAssetQueryCache();
             Selection.activeObject = asset;
             return asset;
         }
@@ -193,6 +198,17 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Dashboard
         public static IReadOnlyList<RPGToolkitAssetBrowserEntry> FindAssets(RPGToolkitAuthoringSection section, string search = null)
         {
             if (section == null) throw new ArgumentNullException(nameof(section));
+            var allEntries = FindAssetsUnfiltered(section);
+            return string.IsNullOrWhiteSpace(search) ? allEntries : allEntries.Where(entry => MatchesSearch(entry.Asset, entry.Path, search)).ToList();
+        }
+
+        private static IReadOnlyList<RPGToolkitAssetBrowserEntry> FindAssetsUnfiltered(RPGToolkitAuthoringSection section)
+        {
+            if (_assetCache.TryGetValue(section.AssetType, out var cached) && EditorApplication.timeSinceStartup - cached.Timestamp < AssetCacheLifetimeSeconds && cached.Entries.All(entry => entry.Asset != null))
+            {
+                return cached.Entries;
+            }
+
             var entries = new List<RPGToolkitAssetBrowserEntry>();
             var ids = new Dictionary<RPGId, int>();
             var guids = AssetDatabase.FindAssets($"t:{section.AssetType.Name}");
@@ -201,12 +217,13 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Dashboard
                 var path = AssetDatabase.GUIDToAssetPath(guid);
                 var asset = AssetDatabase.LoadAssetAtPath(path, section.AssetType);
                 if (asset == null) continue;
-                if (!MatchesSearch(asset, path, search)) continue;
                 if (asset is RPGObject rpgAsset && !rpgAsset.Id.IsEmpty) ids[rpgAsset.Id] = ids.TryGetValue(rpgAsset.Id, out var count) ? count + 1 : 1;
                 entries.Add(new RPGToolkitAssetBrowserEntry(asset, path, false));
             }
 
-            return entries.Select(entry => new RPGToolkitAssetBrowserEntry(entry.Asset, entry.Path, entry.Asset is RPGObject rpgAsset && !rpgAsset.Id.IsEmpty && ids.TryGetValue(rpgAsset.Id, out var count) && count > 1)).ToList();
+            var result = entries.Select(entry => new RPGToolkitAssetBrowserEntry(entry.Asset, entry.Path, entry.Asset is RPGObject rpgAsset && !rpgAsset.Id.IsEmpty && ids.TryGetValue(rpgAsset.Id, out var count) && count > 1)).ToList();
+            _assetCache[section.AssetType] = new CachedAssetEntries(EditorApplication.timeSinceStartup, result);
+            return result;
         }
 
         public static RPGToolkitDashboardCardData BuildCardData(RPGToolkitAuthoringSection section, IReadOnlyDictionary<string, string> lastValidationResults = null)
@@ -378,6 +395,18 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Dashboard
                 if (!AssetDatabase.IsValidFolder(next)) AssetDatabase.CreateFolder(current, parts[i]);
                 current = next;
             }
+        }
+
+        private sealed class CachedAssetEntries
+        {
+            public CachedAssetEntries(double timestamp, IReadOnlyList<RPGToolkitAssetBrowserEntry> entries)
+            {
+                Timestamp = timestamp;
+                Entries = entries;
+            }
+
+            public double Timestamp { get; }
+            public IReadOnlyList<RPGToolkitAssetBrowserEntry> Entries { get; }
         }
     }
 }

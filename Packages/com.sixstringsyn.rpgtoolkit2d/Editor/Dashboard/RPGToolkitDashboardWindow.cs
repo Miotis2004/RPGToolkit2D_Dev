@@ -7,11 +7,28 @@ using UnityEngine;
 
 namespace SixStringSyn.RPGToolkit2D.Editor.Dashboard
 {
+    public enum RPGToolkitDashboardTab
+    {
+        Overview,
+        Create,
+        Database,
+        Validation,
+        Tools,
+        DocsSamples
+    }
+
     public sealed class RPGToolkitDashboardWindow : EditorWindow
     {
+        public static readonly string[] RequiredPhase11Tabs = { "Overview", "Create", "Database", "Validation", "Tools", "Docs/Samples" };
+        private const string SelectedTabPrefsKey = "SixStringSyn.RPGToolkit2D.Dashboard.SelectedTab";
+        private const string FavoriteWorkflowsPrefsKey = "SixStringSyn.RPGToolkit2D.Dashboard.Favorites";
+        private const string RecentWorkflowsPrefsKey = "SixStringSyn.RPGToolkit2D.Dashboard.Recent";
+        private const int MaxRecentWorkflows = 6;
+
         private Vector2 _scroll;
         private string _searchText = string.Empty;
         private int _selectedSection;
+        private RPGToolkitDashboardTab _selectedTab = RPGToolkitDashboardTab.Overview;
         private RPGMapProjectValidationReport _mapValidationReport;
         private RPGToolkitValidationReport _validationCenterReport;
         private string _validationCenterSearch = string.Empty;
@@ -20,6 +37,8 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Dashboard
         private bool _validationCenterShowInfo;
         private readonly Dictionary<string, bool> _expandedCards = new Dictionary<string, bool>();
         private readonly Dictionary<string, string> _lastValidationResults = new Dictionary<string, string>();
+        private List<string> _favoriteWorkflows = new List<string>();
+        private List<string> _recentWorkflows = new List<string>();
 
         [MenuItem("Tools/RPG Toolkit/Dashboard")]
         public static void Open()
@@ -29,17 +48,20 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Dashboard
             window.Show();
         }
 
+        private void OnEnable()
+        {
+            _selectedTab = (RPGToolkitDashboardTab)EditorPrefs.GetInt(SelectedTabPrefsKey, (int)RPGToolkitDashboardTab.Overview);
+            _favoriteWorkflows = LoadWorkflowList(FavoriteWorkflowsPrefsKey);
+            _recentWorkflows = LoadWorkflowList(RecentWorkflowsPrefsKey);
+        }
+
         private void OnGUI()
         {
+            HandleKeyboardShortcuts();
             _scroll = EditorGUILayout.BeginScrollView(_scroll);
             DrawHeader();
-            DrawQuickStart();
-            DrawCapabilityLegend();
-            DrawAuthoringSections();
-            DrawDatabaseBrowser();
-            DrawUtilities();
-            DrawValidation();
-            DrawValidationCenter();
+            DrawTabNavigation();
+            DrawSelectedTab();
             EditorGUILayout.EndScrollView();
         }
 
@@ -47,6 +69,78 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Dashboard
         {
             EditorGUILayout.LabelField("RPG Toolkit 2D", EditorStyles.boldLabel);
             EditorGUILayout.LabelField("Central dashboard for setup, asset creation, database browsing, validation, samples, and authoring documentation.", EditorStyles.wordWrappedLabel);
+            EditorGUILayout.Space();
+        }
+
+        private void DrawTabNavigation()
+        {
+            var selected = GUILayout.Toolbar((int)_selectedTab, RequiredPhase11Tabs);
+            if (selected != (int)_selectedTab)
+            {
+                _selectedTab = (RPGToolkitDashboardTab)selected;
+                EditorPrefs.SetInt(SelectedTabPrefsKey, selected);
+                GUI.FocusControl(null);
+            }
+            EditorGUILayout.Space();
+        }
+
+        private void DrawSelectedTab()
+        {
+            switch (_selectedTab)
+            {
+                case RPGToolkitDashboardTab.Overview:
+                    DrawOverview();
+                    break;
+                case RPGToolkitDashboardTab.Create:
+                    DrawQuickStart();
+                    DrawCapabilityLegend();
+                    DrawAuthoringSections();
+                    break;
+                case RPGToolkitDashboardTab.Database:
+                    DrawDatabaseBrowser();
+                    break;
+                case RPGToolkitDashboardTab.Validation:
+                    DrawValidation();
+                    DrawValidationCenter();
+                    break;
+                case RPGToolkitDashboardTab.Tools:
+                    DrawUtilities();
+                    break;
+                case RPGToolkitDashboardTab.DocsSamples:
+                    DrawDocsAndSamples();
+                    break;
+            }
+        }
+
+        private void DrawOverview()
+        {
+            DrawProjectHealthSummary();
+            DrawRecentlyUsedWorkflows();
+            DrawFavoriteWorkflows();
+            DrawEmptyStateHelp();
+            DrawQuickStart();
+        }
+
+        private void DrawProjectHealthSummary()
+        {
+            var cardData = RPGToolkitAuthoringWorkflow.Sections.Select(section => RPGToolkitAuthoringWorkflow.BuildCardData(section, _lastValidationResults)).ToList();
+            var assetCount = cardData.Sum(data => data.AssetCount);
+            var duplicateCount = cardData.Sum(data => data.DuplicateIdCount);
+            var invalidCount = cardData.Sum(data => data.InvalidAssetCount);
+            var importantEmptyCount = cardData.Count(data => !string.IsNullOrWhiteSpace(data.EmptyContentWarning));
+            var messageType = invalidCount > 0 || duplicateCount > 0 ? MessageType.Warning : assetCount == 0 ? MessageType.Info : MessageType.None;
+
+            EditorGUILayout.LabelField("Project Health", EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox($"{HealthIcon(invalidCount, duplicateCount)} {assetCount} RPG asset(s), {invalidCount} invalid asset(s), {duplicateCount} duplicate ID flag(s), {importantEmptyCount} important empty workflow(s).", messageType);
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button(new GUIContent("Refresh Counts", "Clear cached asset queries and rebuild dashboard counts."))) RPGToolkitAuthoringWorkflow.ClearAssetQueryCache();
+            if (GUILayout.Button(new GUIContent("Validate All", "Run the Validation Center for every supported RPG content type.")))
+            {
+                _selectedTab = RPGToolkitDashboardTab.Validation;
+                EditorPrefs.SetInt(SelectedTabPrefsKey, (int)_selectedTab);
+                _validationCenterReport = RPGToolkitValidationCenter.ValidateAllRPGContent();
+            }
+            EditorGUILayout.EndHorizontal();
             EditorGUILayout.Space();
         }
 
@@ -152,18 +246,19 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Dashboard
                 }
 
                 EditorGUILayout.BeginHorizontal();
-                if (GUILayout.Button(new GUIContent("Create", $"Create a new {section.AssetType.Name} asset in the default authoring folder."))) RPGToolkitAuthoringWorkflow.CreateAsset(section);
-                if (GUILayout.Button(new GUIContent("Browse", $"Show {section.Title} in the database browser."))) SelectDatabaseSection(section);
-                if (GUILayout.Button(new GUIContent("Validate", $"Validate {section.Title} dashboard card data."))) RPGToolkitAuthoringWorkflow.ValidateCard(section, _lastValidationResults);
+                if (GUILayout.Button(new GUIContent("★", IsFavorite(section.Title) ? "Remove this workflow from favorites." : "Pin this workflow to favorites."), GUILayout.Width(32f))) ToggleFavorite(section.Title);
+                if (GUILayout.Button(new GUIContent("Create", $"Create a new {section.AssetType.Name} asset in the default authoring folder."))) { RPGToolkitAuthoringWorkflow.CreateAsset(section); TrackRecent(section.Title); }
+                if (GUILayout.Button(new GUIContent("Browse", $"Show {section.Title} in the database browser."))) { SelectDatabaseSection(section); TrackRecent(section.Title); }
+                if (GUILayout.Button(new GUIContent("Validate", $"Validate {section.Title} dashboard card data."))) { RPGToolkitAuthoringWorkflow.ValidateCard(section, _lastValidationResults); TrackRecent(section.Title); }
                 var toolAvailable = section.Capability.FocusedEditorStatus != RPGToolkitDashboardCapabilityStatus.Missing && RPGToolkitAuthoringWorkflow.HasFocusedTool(section);
                 using (new EditorGUI.DisabledScope(!toolAvailable))
                 {
                     var toolLabel = toolAvailable ? "Open Tool" : "Tool Unavailable";
                     var toolTip = toolAvailable ? $"Open the focused {section.Title} authoring tool." : $"No focused {section.Title} tool exists yet; use Docs for current guidance.";
-                    if (GUILayout.Button(new GUIContent(toolLabel, toolTip))) RPGToolkitAuthoringWorkflow.TryOpenFocusedTool(section);
+                    if (GUILayout.Button(new GUIContent(toolLabel, toolTip))) { RPGToolkitAuthoringWorkflow.TryOpenFocusedTool(section); TrackRecent(section.Title); }
                 }
 
-                if (GUILayout.Button(new GUIContent("Docs", $"Open the {section.Title} authoring documentation."))) RPGToolkitAuthoringWorkflow.TryOpenDocumentation(section);
+                if (GUILayout.Button(new GUIContent("Docs", $"Open the {section.Title} authoring documentation."))) { RPGToolkitAuthoringWorkflow.TryOpenDocumentation(section); TrackRecent(section.Title); }
                 EditorGUILayout.EndHorizontal();
                 EditorGUILayout.EndVertical();
             }
@@ -192,16 +287,21 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Dashboard
                 _selectedSection = i;
                 break;
             }
+            _selectedTab = RPGToolkitDashboardTab.Database;
+            EditorPrefs.SetInt(SelectedTabPrefsKey, (int)_selectedTab);
         }
 
         private void DrawDatabaseBrowser()
         {
             EditorGUILayout.LabelField("Database Browser", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Tip: press Ctrl/Cmd+F to focus search. Use Refresh to clear the dashboard asset-query cache for very large projects.", EditorStyles.wordWrappedMiniLabel);
             var sections = RPGToolkitAuthoringWorkflow.Sections;
             var names = new string[sections.Count];
             for (var i = 0; i < sections.Count; i++) names[i] = sections[i].Title;
             _selectedSection = EditorGUILayout.Popup("Content Type", _selectedSection, names);
+            GUI.SetNextControlName("RPGToolkitDashboardSearch");
             _searchText = EditorGUILayout.TextField("Search", _searchText);
+            if (GUILayout.Button("Refresh Cached Queries")) RPGToolkitAuthoringWorkflow.ClearAssetQueryCache();
             var entries = RPGToolkitAuthoringWorkflow.FindAssets(sections[_selectedSection], _searchText);
             EditorGUILayout.LabelField($"{entries.Count} asset(s) found", EditorStyles.miniLabel);
             foreach (var entry in entries)
@@ -237,6 +337,21 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Dashboard
             if (GUILayout.Button("Map Connections")) global::SixStringSyn.RPGToolkit2D.Editor.Windows.MapConnectionBrowserWindow.ShowWindow();
             EditorGUILayout.EndHorizontal();
             EditorGUILayout.Space();
+        }
+
+        private void DrawDocsAndSamples()
+        {
+            EditorGUILayout.LabelField("Docs and Samples", EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox("Open authoring guides, samples, and content-specific documentation from one place.", MessageType.Info);
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("Editor Tools Docs")) RPGToolkitAuthoringWorkflow.OpenDocumentation(RPGToolkitAuthoringWorkflow.EditorToolsDocumentationPath);
+            if (GUILayout.Button("Package Samples")) EditorUtility.RevealInFinder(RPGToolkitPackageValidator.PackagePath + "/Samples~");
+            if (GUILayout.Button("Package README")) RPGToolkitAuthoringWorkflow.OpenDocumentation(RPGToolkitPackageValidator.PackagePath + "/README.md");
+            EditorGUILayout.EndHorizontal();
+            foreach (var section in RPGToolkitAuthoringWorkflow.Sections)
+            {
+                if (GUILayout.Button(new GUIContent(section.Title + " Docs", section.DocumentationPath))) RPGToolkitAuthoringWorkflow.TryOpenDocumentation(section);
+            }
         }
 
         private void DrawValidation()
@@ -341,6 +456,91 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Dashboard
                 }
             }
         }
+
+        private void DrawRecentlyUsedWorkflows()
+        {
+            EditorGUILayout.LabelField("Recently Used", EditorStyles.boldLabel);
+            if (_recentWorkflows.Count == 0)
+            {
+                EditorGUILayout.LabelField("No recent dashboard workflows yet.", EditorStyles.wordWrappedMiniLabel);
+                return;
+            }
+            DrawWorkflowButtons(_recentWorkflows);
+        }
+
+        private void DrawFavoriteWorkflows()
+        {
+            EditorGUILayout.LabelField("Favorites", EditorStyles.boldLabel);
+            if (_favoriteWorkflows.Count == 0)
+            {
+                EditorGUILayout.LabelField("Pin workflows from the Create tab with the ★ button.", EditorStyles.wordWrappedMiniLabel);
+                return;
+            }
+            DrawWorkflowButtons(_favoriteWorkflows);
+        }
+
+        private void DrawWorkflowButtons(IEnumerable<string> workflowTitles)
+        {
+            EditorGUILayout.BeginHorizontal();
+            foreach (var title in workflowTitles)
+            {
+                if (GUILayout.Button(title))
+                {
+                    var section = RPGToolkitAuthoringWorkflow.Sections.FirstOrDefault(candidate => candidate.Title == title);
+                    if (section != null) SelectDatabaseSection(section);
+                }
+            }
+            EditorGUILayout.EndHorizontal();
+        }
+
+        private void DrawEmptyStateHelp()
+        {
+            if (RPGToolkitAuthoringWorkflow.Sections.Any(section => RPGToolkitAuthoringWorkflow.FindAssets(section).Count > 0)) return;
+            EditorGUILayout.HelpBox("New project empty state: create the authoring folder, add an Item or Character, then run validation to learn what each workflow needs next.", MessageType.Info);
+        }
+
+        private void HandleKeyboardShortcuts()
+        {
+            var current = Event.current;
+            if (current == null || current.type != EventType.KeyDown) return;
+            if ((current.control || current.command) && current.keyCode == KeyCode.F)
+            {
+                _selectedTab = RPGToolkitDashboardTab.Database;
+                EditorPrefs.SetInt(SelectedTabPrefsKey, (int)_selectedTab);
+                EditorApplication.delayCall += () => EditorGUI.FocusTextInControl("RPGToolkitDashboardSearch");
+                current.Use();
+            }
+            else if ((current.control || current.command) && current.keyCode == KeyCode.Return)
+            {
+                _selectedTab = RPGToolkitDashboardTab.Validation;
+                EditorPrefs.SetInt(SelectedTabPrefsKey, (int)_selectedTab);
+                _validationCenterReport = RPGToolkitValidationCenter.ValidateAllRPGContent();
+                current.Use();
+            }
+        }
+
+        private static string HealthIcon(int invalidCount, int duplicateCount) => invalidCount > 0 ? "❌" : duplicateCount > 0 ? "⚠" : "✓";
+
+        private bool IsFavorite(string title) => _favoriteWorkflows.Contains(title);
+
+        private void ToggleFavorite(string title)
+        {
+            if (_favoriteWorkflows.Contains(title)) _favoriteWorkflows.Remove(title);
+            else _favoriteWorkflows.Add(title);
+            SaveWorkflowList(FavoriteWorkflowsPrefsKey, _favoriteWorkflows);
+        }
+
+        private void TrackRecent(string title)
+        {
+            _recentWorkflows.Remove(title);
+            _recentWorkflows.Insert(0, title);
+            if (_recentWorkflows.Count > MaxRecentWorkflows) _recentWorkflows.RemoveRange(MaxRecentWorkflows, _recentWorkflows.Count - MaxRecentWorkflows);
+            SaveWorkflowList(RecentWorkflowsPrefsKey, _recentWorkflows);
+        }
+
+        private static List<string> LoadWorkflowList(string key) => EditorPrefs.GetString(key, string.Empty).Split(new[] { '|' }, System.StringSplitOptions.RemoveEmptyEntries).ToList();
+
+        private static void SaveWorkflowList(string key, IEnumerable<string> titles) => EditorPrefs.SetString(key, string.Join("|", titles));
 
         private static MessageType ToMessageType(SixStringSyn.RPGToolkit2D.Runtime.Core.RPGValidationSeverity severity)
         {
