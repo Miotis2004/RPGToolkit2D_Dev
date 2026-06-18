@@ -74,7 +74,7 @@ Use the **Loot Tables** card to create `LootTableDefinition` assets for weighted
 
 ### NPCs
 
-Use the **NPCs** card to create `NPCDefinition` assets for metadata, dialogue links, party hooks, relationship data, and world-state keys. A focused NPC Editor is planned; until then, use the Inspector and Database Browser.
+Use the **NPCs** card to create `NPCDefinition` assets for metadata, dialogue links, party hooks, relationship data, schedule references, and world-state keys. Click **Open Tool** or choose **Tools > RPG Toolkit > NPC Editor** to manage NPCs in a focused workflow. The editor supports selecting, creating, duplicating, pinging, editing display names/descriptions/tags, assigning character/dialogue/vendor/schedule references, configuring recruitment and world-state keys, showing linked quest objectives, validating missing dialogue and duplicate IDs, and opening the Dialogue Graph or World State Debugger from the selected NPC.
 
 ### Maps
 
