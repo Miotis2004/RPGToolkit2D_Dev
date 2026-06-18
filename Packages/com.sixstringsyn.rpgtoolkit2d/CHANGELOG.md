@@ -7,6 +7,7 @@ All notable changes to RPG Toolkit 2D will be documented in this file.
 
 ### Added
 
+- Added a Package Manager importable Basic RPG Setup sample and package dependency declarations for built-in Unity modules used by runtime systems.
 - Promoted package metadata to a `1.0.0` release candidate with Package Manager documentation, changelog, license, and sample metadata links.
 - Added release documentation hub, API reference, extension guide, upgrade guide, and troubleshooting page.
 - Added an explicit `RPGToolkitExperimentalAttribute` marker and tagged late-phase economy/crafting APIs that still need broader production feedback.

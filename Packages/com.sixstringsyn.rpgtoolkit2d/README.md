@@ -1,6 +1,6 @@
 # RPG Toolkit 2D
 
-RPG Toolkit 2D is a reusable Unity 6 package for building data-driven 2D RPGs. It provides runtime systems, ScriptableObject content definitions, editor tooling, tests, and documentation for multiple RPG styles without forcing one game structure.
+RPG Toolkit 2D is a reusable Unity 6 package for building data-driven 2D RPGs. It provides runtime systems, ScriptableObject content definitions, editor tooling, an importable onboarding sample, tests, and documentation for multiple RPG styles without forcing one game structure.
 
 ## Installation
 
@@ -21,7 +21,7 @@ For a blank Unity 6 project, add the package from disk by selecting **Package Ma
 - Quest definitions, objectives, rewards, journal persistence, and dialogue command integration.
 - Interactions, scene transitions, world state flags, party roster data, crafting, combat, abilities, status effects, loot, and vendors.
 - Editor dashboard, content authoring workflow helpers, inspectors, item database browsing, dialogue graph tooling, quest editing, save/world debuggers, and package validation.
-- Runtime and editor tests, release documentation, upgrade notes, and troubleshooting guidance.
+- Runtime and editor tests, Package Manager sample metadata, release documentation, upgrade notes, and troubleshooting guidance.
 
 ## Unity Version
 
@@ -29,10 +29,10 @@ The package targets Unity 6 and declares Unity `6000.0` compatibility in `packag
 
 ## First Workflow
 
-Open **Tools > RPG Toolkit > Dashboard** to validate package setup, create core content, browse definitions, and launch focused editor tools. See `Documentation~/getting-started.md` for the first item pickup and save/load milestone.
+Open **Tools > RPG Toolkit > Dashboard** to validate package setup, create core content, browse definitions, and launch focused editor tools. You can also import **Basic RPG Setup** from Package Manager to add a project-local checklist for the recommended authoring flow. See `Documentation~/getting-started.md` for the first item pickup and save/load milestone.
 
 ## Known Limitations
 
 - Economy and crafting APIs are marked experimental for the 1.0.0 release candidate and may receive compatibility-breaking refinements.
-- Samples currently include package metadata scaffolding only; production scenes should be supplied by the host project until full sample packs are imported.
+- The Basic RPG Setup sample is an onboarding checklist only; production scenes should be supplied by the host project until full sample packs are imported.
 - Unity Editor package validation, local-path install, Git URL install, and package-removal checks must be run in the target release environment before publishing.
