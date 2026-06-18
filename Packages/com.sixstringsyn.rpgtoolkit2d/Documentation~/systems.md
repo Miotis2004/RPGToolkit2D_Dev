@@ -187,7 +187,7 @@ Each save includes high-level metadata for slot selection UI and debugging:
 - playtime seconds
 - active scene name
 
-The internal JSON field names may change before `1.0.0`, so projects should treat the format as toolkit-owned and use the save APIs instead of hand-editing fields.
+Projects should treat save JSON as toolkit-owned and use the save APIs instead of hand-editing fields; migrate older data with `ISaveMigration` implementations.
 
 ### Save Contributors
 

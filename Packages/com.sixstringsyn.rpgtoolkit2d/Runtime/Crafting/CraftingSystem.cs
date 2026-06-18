@@ -1,11 +1,14 @@
 using System;
 using System.Collections.Generic;
 using SixStringSyn.RPGToolkit2D.Runtime.Inventory;
+using SixStringSyn.RPGToolkit2D.Runtime.Core;
 
 namespace SixStringSyn.RPGToolkit2D.Runtime.Crafting
 {
+    [RPGToolkitExperimental("Phase 13 release candidate: economy/crafting APIs need broader production feedback before stabilization.")]
     public sealed class CraftingResult { public bool Success; public string Message; public static CraftingResult Ok() => new CraftingResult { Success = true }; public static CraftingResult Fail(string message) => new CraftingResult { Success = false, Message = message }; }
     public interface ICraftingPresenter { void ShowRecipe(CraftingRecipeDefinition recipe, CraftingResult validation); void ShowCrafted(CraftingRecipeDefinition recipe); }
+    [RPGToolkitExperimental("Phase 13 release candidate: economy/crafting APIs need broader production feedback before stabilization.")]
     public sealed class CraftingSystem
     {
         public CraftingResult Validate(CraftingRecipeDefinition recipe, InventoryContainer inventory, string stationId = null, int availableCurrency = 0)

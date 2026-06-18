@@ -5,9 +5,11 @@ using UnityEngine;
 
 namespace SixStringSyn.RPGToolkit2D.Runtime.Crafting
 {
-    [System.Serializable] public sealed class CraftingIngredient { public ItemDefinition item; public int quantity = 1; }
+    [System.Serializable] [RPGToolkitExperimental("Phase 13 release candidate: economy/crafting APIs need broader production feedback before stabilization.")]
+    public sealed class CraftingIngredient { public ItemDefinition item; public int quantity = 1; }
     [System.Serializable] public sealed class CraftingOutput { public ItemDefinition item; public int quantity = 1; }
     [CreateAssetMenu(fileName = "NewCraftingRecipe", menuName = "RPG Toolkit/Crafting Recipe")]
+    [RPGToolkitExperimental("Phase 13 release candidate: economy/crafting APIs need broader production feedback before stabilization.")]
     public sealed class CraftingRecipeDefinition : RPGObject
     {
         [SerializeField] private string _stationId;

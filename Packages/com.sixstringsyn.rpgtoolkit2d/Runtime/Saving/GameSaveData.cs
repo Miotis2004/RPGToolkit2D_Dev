@@ -7,7 +7,7 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Saving
     public sealed class SaveMetadata
     {
         public string saveVersion = SaveConstants.CurrentSaveVersion;
-        public string packageVersion = "0.1.0";
+        public string packageVersion = "1.0.0";
         public string createdUtc;
         public string updatedUtc;
         public double playtimeSeconds;
@@ -57,6 +57,6 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Saving
 
     public static class SaveConstants
     {
-        public const string CurrentSaveVersion = "0.1.0";
+        public const string CurrentSaveVersion = "1.0.0";
     }
 }

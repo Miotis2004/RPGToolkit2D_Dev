@@ -7,8 +7,10 @@ using UnityEngine;
 
 namespace SixStringSyn.RPGToolkit2D.Runtime.Vendors
 {
-    [Serializable] public sealed class VendorStockEntry { public ItemDefinition item; public int quantity = 1; public int price = 1; }
+    [Serializable] [RPGToolkitExperimental("Phase 13 release candidate: economy/crafting APIs need broader production feedback before stabilization.")]
+    public sealed class VendorStockEntry { public ItemDefinition item; public int quantity = 1; public int price = 1; }
     [CreateAssetMenu(fileName = "NewVendor", menuName = "RPG Toolkit/Vendor")]
+    [RPGToolkitExperimental("Phase 13 release candidate: economy/crafting APIs need broader production feedback before stabilization.")]
     public sealed class VendorDefinition : RPGObject { [SerializeField] private List<VendorStockEntry> _stock = new List<VendorStockEntry>(); [SerializeField] private float _sellMultiplier = .5f; public IReadOnlyList<VendorStockEntry> Stock => _stock; public float SellMultiplier => Mathf.Clamp01(_sellMultiplier); }
     public sealed class VendorShop
     {
