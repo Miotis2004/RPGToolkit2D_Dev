@@ -2,6 +2,25 @@
 
 All notable changes to RPG Toolkit 2D will be documented in this file.
 
+
+## [1.0.0] - Phase 13 Package Hardening and Release Preparation
+
+### Added
+
+- Promoted package metadata to a `1.0.0` release candidate with Package Manager documentation, changelog, license, and sample metadata links.
+- Added release documentation hub, API reference, extension guide, upgrade guide, and troubleshooting page.
+- Added an explicit `RPGToolkitExperimentalAttribute` marker and tagged late-phase economy/crafting APIs that still need broader production feedback.
+- Added deterministic performance smoke tests for inventory operations, database validation, dialogue traversal, quest tracking, and save/load serialization.
+
+### Changed
+
+- Expanded the README with the final feature list and known limitations for release review.
+- Extended package validation to require the release documentation set.
+
+### Release Validation Notes
+
+- Full edit mode/play mode test execution, Unity Package Manager local-path and Git URL installation checks, blank Unity 6 project validation, dependency-combination validation, and clean package-removal checks must be completed in the target Unity release environment before publishing.
+
 ## [0.1.0]
 
 ### Phase 11 - Editor Dashboard and Authoring Workflow Polish

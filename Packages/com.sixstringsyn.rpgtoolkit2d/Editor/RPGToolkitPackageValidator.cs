@@ -9,7 +9,7 @@ namespace SixStringSyn.RPGToolkit2D.Editor
     {
         public const string PackageName = "com.sixstringsyn.rpgtoolkit2d";
         public const string DisplayName = "RPG Toolkit 2D";
-        public const string Version = "0.1.0";
+        public const string Version = "1.0.0";
         public const string PackagePath = "Packages/" + PackageName;
 
         public static IReadOnlyList<PackageValidationResult> ValidatePackageFoundation()
@@ -25,6 +25,11 @@ namespace SixStringSyn.RPGToolkit2D.Editor
                 ValidateFile("README.md"),
                 ValidateFile("CHANGELOG.md"),
                 ValidateFile("LICENSE.md"),
+                ValidateFile("Documentation~/index.md"),
+                ValidateFile("Documentation~/api.md"),
+                ValidateFile("Documentation~/extension-guide.md"),
+                ValidateFile("Documentation~/troubleshooting.md"),
+                ValidateFile("Documentation~/upgrade-guide.md"),
                 ValidateFile("Runtime/com.sixstringsyn.rpgtoolkit2d.runtime.asmdef"),
                 ValidateFile("Editor/com.sixstringsyn.rpgtoolkit2d.editor.asmdef"),
                 ValidateFile("Tests/Runtime/com.sixstringsyn.rpgtoolkit2d.tests.runtime.asmdef"),

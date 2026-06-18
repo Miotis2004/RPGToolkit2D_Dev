@@ -6,8 +6,10 @@ using UnityEngine;
 
 namespace SixStringSyn.RPGToolkit2D.Runtime.Loot
 {
-    [Serializable] public sealed class LootEntry { public ItemDefinition item; public int minQuantity = 1; public int maxQuantity = 1; public int weight = 1; }
+    [Serializable] [RPGToolkitExperimental("Phase 13 release candidate: economy/crafting APIs need broader production feedback before stabilization.")]
+    public sealed class LootEntry { public ItemDefinition item; public int minQuantity = 1; public int maxQuantity = 1; public int weight = 1; }
     [CreateAssetMenu(fileName = "NewLootTable", menuName = "RPG Toolkit/Loot Table")]
+    [RPGToolkitExperimental("Phase 13 release candidate: economy/crafting APIs need broader production feedback before stabilization.")]
     public sealed class LootTableDefinition : RPGObject { [SerializeField] private List<LootEntry> _entries = new List<LootEntry>(); public IReadOnlyList<LootEntry> Entries => _entries; }
     public static class LootRoller
     {

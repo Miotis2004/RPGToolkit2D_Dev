@@ -1,6 +1,6 @@
 {
   "name": "com.sixstringsyn.rpgtoolkit2d",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "displayName": "RPG Toolkit 2D",
   "description": "A reusable Unity 6 package for building data-driven 2D RPGs with runtime systems, editor tooling, samples, tests, and documentation.",
   "unity": "6000.0",
@@ -13,5 +13,15 @@
     "2d",
     "toolkit",
     "unity"
+  ],
+  "documentationUrl": "Documentation~/index.md",
+  "changelogUrl": "CHANGELOG.md",
+  "licensesUrl": "LICENSE.md",
+  "samples": [
+    {
+      "displayName": "Package Structure Placeholder",
+      "description": "Placeholder sample folder retained so Package Manager sample import metadata is present for release validation.",
+      "path": "Samples~"
+    }
   ]
 }

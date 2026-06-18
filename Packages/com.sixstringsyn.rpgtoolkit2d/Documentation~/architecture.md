@@ -12,7 +12,7 @@ The development host targets Unity `6000.5.0f1`, as recorded in `ProjectSettings
 
 - Package identifier: `com.sixstringsyn.rpgtoolkit2d`
 - Display name: `RPG Toolkit 2D`
-- Initial semantic version: `0.1.0`
+- Release semantic version: `1.0.0`
 - Author name: `Six String Syn`
 - License: MIT License
 - Supported installation method during development: Unity Package Manager embedded/local package from `Packages/com.sixstringsyn.rpgtoolkit2d`
