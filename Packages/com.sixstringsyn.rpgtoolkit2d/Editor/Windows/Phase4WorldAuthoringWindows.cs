@@ -13,13 +13,6 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Windows
         protected override void CreateAsset() => ProjectWindowUtil.CreateAsset(ScriptableObject.CreateInstance<RPGMapDefinition>(), "NewRPGMap.asset");
     }
 
-    public sealed class TilesetEditorWindow : AssetPickerWindow
-    {
-        [MenuItem("Tools/RPG Toolkit/Maps/Tileset Editor")]
-        public static void Open() { var window = GetWindow<TilesetEditorWindow>("Tilesets"); window.TypeName = "Tileset"; }
-        protected override void CreateAsset() => ProjectWindowUtil.CreateAsset(ScriptableObject.CreateInstance<RPGTilesetDefinition>(), "NewRPGTileset.asset");
-    }
-
     public sealed class NPCScheduleEditorWindow : AssetPickerWindow
     {
         [MenuItem("Tools/RPG Toolkit/World/NPC Schedule Editor")]
