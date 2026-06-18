@@ -46,7 +46,7 @@ The dashboard provides creation shortcuts for the common ScriptableObject defini
 
 ### Characters
 
-Use the **Characters** card to create `CharacterDefinition` assets for player characters, companions, enemies, and stat templates. A focused Character Editor is planned; until then, create the asset from the card and edit it in the Inspector or locate it through the Database Browser.
+Use the **Characters** card to create `CharacterDefinition` assets for player characters, companions, enemies, and stat templates. **Open Tool** launches the Character Editor, where you can search existing characters, create or duplicate assets, ping/select assets, edit core fields, assign role tags such as `party` or `enemy`, maintain stat templates/resources, and review validation for missing display names, duplicate IDs, invalid stat entries, and broken references.
 
 ### Items
 

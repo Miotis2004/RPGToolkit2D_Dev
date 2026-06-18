@@ -9,6 +9,7 @@ using SixStringSyn.RPGToolkit2D.Runtime.Data;
 using SixStringSyn.RPGToolkit2D.Runtime.Foundation;
 using SixStringSyn.RPGToolkit2D.Runtime.Maps;
 using SixStringSyn.RPGToolkit2D.Editor;
+using SixStringSyn.RPGToolkit2D.Editor.Windows;
 using UnityEditor;
 using UnityEngine;
 
@@ -169,6 +170,35 @@ namespace SixStringSyn.RPGToolkit2D.Tests.Editor
                 Assert.That(data.EmptyContentWarning, Does.Contain("No maps"));
                 Assert.That(data.HasWarnings, Is.True);
             }
+        }
+
+
+        [Test]
+        public void Phase4CharacterEditorIsDashboardTool()
+        {
+            var characterSection = System.Linq.Enumerable.First(RPGToolkitAuthoringWorkflow.Sections, section => section.AssetType == typeof(CharacterDefinition));
+
+            Assert.That(characterSection.Capability.FocusedEditorStatus, Is.EqualTo(RPGToolkitDashboardCapabilityStatus.Complete));
+            Assert.That(characterSection.Capability.ValidationStatus, Is.EqualTo(RPGToolkitDashboardCapabilityStatus.Complete));
+            Assert.That(characterSection.OpenEditor, Is.Not.Null);
+            Assert.That(RPGToolkitAuthoringWorkflow.HasFocusedTool(characterSection), Is.True);
+        }
+
+        [Test]
+        public void Phase4CharacterValidationReportsMissingDisplayNameAndDuplicateIds()
+        {
+            var characterSection = System.Linq.Enumerable.First(RPGToolkitAuthoringWorkflow.Sections, section => section.AssetType == typeof(CharacterDefinition));
+            var first = RPGToolkitAuthoringWorkflow.CreateAsset(characterSection, TestFolder) as CharacterDefinition;
+            var second = RPGToolkitAuthoringWorkflow.CreateAsset(characterSection, TestFolder) as CharacterDefinition;
+            second.SetId(first.Id);
+            EditorUtility.SetDirty(second);
+            AssetDatabase.SaveAssets();
+
+            var result = CharacterEditorWindow.ValidateCharacter(first, new[] { first, second });
+
+            Assert.That(System.Linq.Enumerable.Any(result.Messages, message => message.Code == "RPG_CHARACTER_MISSING_DISPLAY_NAME"), Is.True);
+            Assert.That(System.Linq.Enumerable.Any(result.Messages, message => message.Code == "RPG_CHARACTER_DUPLICATE_ID"), Is.True);
+            Assert.That(result.IsValid, Is.False);
         }
 
         [Test]
