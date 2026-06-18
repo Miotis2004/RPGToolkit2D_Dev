@@ -36,7 +36,7 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Dialogue
         {
             var result = new RPGValidationResult();
             if (_nodes.Count == 0) { result.AddError("DIALOGUE_EMPTY", "Dialogue contains no nodes.", Id); return result; }
-            if (EntryNode == null) result.AddError("DIALOGUE_NO_ENTRY", "Dialogue has no valid entry node.", Id);
+            if (EntryNode == null || (!string.IsNullOrWhiteSpace(_entryNodeId) && GetNode(_entryNodeId) == null)) result.AddError("DIALOGUE_NO_ENTRY", "Dialogue has no valid entry node.", Id);
             var ids = new HashSet<string>();
             foreach (var node in _nodes)
             {
@@ -49,7 +49,39 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Dialogue
                     if (string.IsNullOrWhiteSpace(choice.TargetNodeId) || GetNode(choice.TargetNodeId) == null) result.AddError("DIALOGUE_MISSING_CHOICE_TARGET", $"Choice '{choice.Text}' links to a missing node.", Id);
                 }
             }
+
+            var reachable = FindReachableNodeIds();
+            foreach (var node in _nodes)
+            {
+                if (!reachable.Contains(node.NodeId)) result.AddWarning("DIALOGUE_UNREACHABLE_NODE", $"Node '{node.NodeId}' is not reachable from the entry node.", Id);
+            }
+
             return result;
+        }
+
+        public IReadOnlyCollection<string> FindReachableNodeIds()
+        {
+            var reachable = new HashSet<string>();
+            var pending = new Queue<DialogueNode>();
+            if (EntryNode != null) pending.Enqueue(EntryNode);
+            while (pending.Count > 0)
+            {
+                var node = pending.Dequeue();
+                if (node == null || !reachable.Add(node.NodeId)) continue;
+                if (!string.IsNullOrWhiteSpace(node.NextNodeId))
+                {
+                    var next = GetNode(node.NextNodeId);
+                    if (next != null) pending.Enqueue(next);
+                }
+
+                foreach (var choice in node.Choices)
+                {
+                    var target = GetNode(choice.TargetNodeId);
+                    if (target != null) pending.Enqueue(target);
+                }
+            }
+
+            return reachable;
         }
     }
 }
