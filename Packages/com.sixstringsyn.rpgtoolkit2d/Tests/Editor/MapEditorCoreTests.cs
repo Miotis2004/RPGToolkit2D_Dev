@@ -62,6 +62,41 @@ namespace SixStringSyn.RPGToolkit2D.Tests.Editor
             Assert.IsFalse(map.ValidateMap().Messages.Any(message => message.Code == "RPG_MAP_ZONE_OUT_OF_BOUNDS"));
         }
 
+
+        [Test]
+        public void ObjectAndConnectionAuthoringSerializesThroughEditorUndo()
+        {
+            var target = ScriptableObject.CreateInstance<RPGMapDefinition>();
+            target.Configure(new Vector2Int(6, 6));
+            target.AddEntrance("Start", new Vector2Int(2, 2));
+
+            var map = ScriptableObject.CreateInstance<RPGMapDefinition>();
+            map.Configure(new Vector2Int(6, 6));
+
+            Undo.RecordObject(map, "Place Map Object");
+            var placed = map.PlaceObject("Door", RPGMapObjectCategory.Door, new Vector2Int(1, 1));
+            placed.displayName = "Cabin Door";
+            placed.persistentStateKey = "doors.cabin";
+            var exit = map.AddExit("Cabin Exit", new Vector2Int(1, 1), target, "Start", RPGMapTransitionKind.Door);
+            EditorUtility.SetDirty(map);
+
+            Assert.AreEqual("Cabin Door", map.FindObject(placed.objectId).displayName);
+            Assert.AreEqual(exit.exitId, map.ResolveExit(exit.exitId).exitId);
+            Assert.IsTrue(EditorUtility.IsDirty(map));
+        }
+
+        [Test]
+        public void BrokenConnectionValidationReportsEditorAuthoringErrors()
+        {
+            var map = ScriptableObject.CreateInstance<RPGMapDefinition>();
+            map.Configure(new Vector2Int(4, 4));
+            map.AddExit("Broken", new Vector2Int(0, 0), null, "Missing");
+
+            var codes = map.ValidateMap().Messages.Select(message => message.Code).ToArray();
+
+            CollectionAssert.Contains(codes, "RPG_MAP_EXIT_MISSING_TARGET");
+        }
+
         [Test]
         public void UndoRedoRestoresPaintOperationsWherePractical()
         {

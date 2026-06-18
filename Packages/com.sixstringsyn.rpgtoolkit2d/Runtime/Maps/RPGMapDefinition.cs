@@ -9,7 +9,7 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Maps
     public enum RPGMapLayerKind { Ground, Decoration, Collision, Overhead, Trigger }
     public enum RPGMapZoneKind { Region, Encounter, Weather, Lighting, Spawn }
     public enum RPGMapMetadataScope { Tile, Layer, Collision, Zone, Object, Connection }
-    public enum RPGMapObjectCategory { NPC, Monster, Item, Chest, Door, SavePoint, Decoration, Custom }
+    public enum RPGMapObjectCategory { NPC, Monster, EncounterSpawn, Item, Chest, Door, ExitTransition, SavePoint, Decoration, Custom }
     public enum RPGMapDirection { None, North, East, South, West }
     public enum RPGMapTransitionKind { Instant, Fade, Door, Stairs, Custom }
 
@@ -51,17 +51,85 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Maps
     public sealed class RPGMapObjectPlacement
     {
         public string objectId;
+        public string displayName;
         public GameObject prefab;
         public string addressableKey;
         public Vector2Int gridPosition;
         public Vector3 worldOffset;
         public Vector3 rotationEuler;
         public Vector3 scale = Vector3.one;
+        public bool snapToGrid = true;
         public string spawnConditionKey;
         public string persistentStateKey;
         public RPGMapObjectCategory category = RPGMapObjectCategory.Custom;
+        public RPGMapDirection facing = RPGMapDirection.South;
         public bool blocksMovement;
         public List<RPGMapMetadataEntry> metadata = new List<RPGMapMetadataEntry>();
+    }
+
+    [Serializable]
+    public sealed class RPGMapObjectSpawnDescriptor
+    {
+        public string objectId;
+        public string displayName;
+        public RPGMapObjectCategory category;
+        public GameObject prefab;
+        public string addressableKey;
+        public Vector2Int gridPosition;
+        public Vector3 worldPosition;
+        public Quaternion rotation;
+        public Vector3 scale;
+        public string persistentStateKey;
+        public IReadOnlyList<RPGMapMetadataEntry> metadata;
+    }
+
+    public interface IRPGMapPrefabResolver
+    {
+        GameObject ResolvePrefab(RPGMapObjectPlacement placement);
+    }
+
+    public interface IRPGMapObjectStateResolver
+    {
+        bool ShouldSpawn(RPGMapObjectPlacement placement);
+    }
+
+    public interface IRPGMapTransitionHandler
+    {
+        void HandleTransition(RPGMapDefinition sourceMap, RPGMapExit exit, RPGMapDefinition targetMap, RPGMapEntrance targetEntrance);
+    }
+
+    public sealed class RPGMapConnectionResolution
+    {
+        public RPGMapExit Exit { get; set; }
+        public RPGMapDefinition TargetMap { get; set; }
+        public RPGMapEntrance TargetEntrance { get; set; }
+        public bool IsResolved => Exit != null && TargetMap != null && (string.IsNullOrWhiteSpace(Exit.targetEntranceId) || TargetEntrance != null);
+    }
+
+    public static class RPGMapObjectSpawner
+    {
+        public static IEnumerable<RPGMapObjectSpawnDescriptor> BuildSpawnDescriptors(RPGMapDefinition map, IRPGMapPrefabResolver prefabResolver = null, IRPGMapObjectStateResolver stateResolver = null)
+        {
+            if (map == null) yield break;
+            foreach (var placement in map.Objects)
+            {
+                if (placement == null || stateResolver?.ShouldSpawn(placement) == false) continue;
+                yield return new RPGMapObjectSpawnDescriptor
+                {
+                    objectId = placement.objectId,
+                    displayName = string.IsNullOrWhiteSpace(placement.displayName) ? placement.objectId : placement.displayName,
+                    category = placement.category,
+                    prefab = prefabResolver?.ResolvePrefab(placement) ?? placement.prefab,
+                    addressableKey = placement.addressableKey,
+                    gridPosition = placement.gridPosition,
+                    worldPosition = new Vector3(placement.gridPosition.x, placement.gridPosition.y, 0f) + placement.worldOffset,
+                    rotation = Quaternion.Euler(placement.rotationEuler),
+                    scale = placement.scale == Vector3.zero ? Vector3.one : placement.scale,
+                    persistentStateKey = placement.persistentStateKey,
+                    metadata = placement.metadata ?? new List<RPGMapMetadataEntry>()
+                };
+            }
+        }
     }
 
     [Serializable]
@@ -174,6 +242,13 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Maps
                 if (layer.tiles == null) layer.tiles = new List<RPGMapTile>();
                 foreach (var tile in layer.tiles)
                     if (tile != null && tile.overrideMetadata == null) tile.overrideMetadata = new List<RPGMapMetadataEntry>();
+            }
+            foreach (var placement in _objects)
+            {
+                if (placement == null) continue;
+                if (string.IsNullOrWhiteSpace(placement.objectId)) placement.objectId = GenerateUniqueObjectId(placement.category.ToString());
+                if (placement.metadata == null) placement.metadata = new List<RPGMapMetadataEntry>();
+                if (placement.scale == Vector3.zero) placement.scale = Vector3.one;
             }
         }
 
@@ -305,6 +380,87 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Maps
             return changed;
         }
 
+
+        public RPGMapObjectPlacement PlaceObject(string displayName, RPGMapObjectCategory category, Vector2Int gridPosition, GameObject prefab = null, bool snapToGrid = true)
+        {
+            if (!IsInBounds(gridPosition)) return null;
+            MigrateExpandedMapData();
+            var baseName = string.IsNullOrWhiteSpace(displayName) ? category.ToString() : displayName.Trim();
+            var placement = new RPGMapObjectPlacement
+            {
+                objectId = GenerateUniqueObjectId(baseName),
+                displayName = baseName,
+                category = category,
+                gridPosition = gridPosition,
+                prefab = prefab,
+                snapToGrid = snapToGrid,
+                scale = Vector3.one
+            };
+            _objects.Add(placement);
+            return placement;
+        }
+
+        public bool MoveObject(string objectId, Vector2Int gridPosition, Vector3? worldOffset = null)
+        {
+            var placement = FindObject(objectId);
+            if (placement == null || !IsInBounds(gridPosition)) return false;
+            placement.gridPosition = gridPosition;
+            if (worldOffset.HasValue) placement.worldOffset = worldOffset.Value;
+            return true;
+        }
+
+        public RPGMapObjectPlacement DuplicateObject(string objectId, Vector2Int? gridPosition = null)
+        {
+            var source = FindObject(objectId);
+            var targetPosition = gridPosition ?? source?.gridPosition ?? Vector2Int.zero;
+            if (source == null || !IsInBounds(targetPosition)) return null;
+            var duplicate = CloneObject(source);
+            duplicate.objectId = GenerateUniqueObjectId($"{source.objectId}_Copy");
+            duplicate.displayName = string.IsNullOrWhiteSpace(source.displayName) ? $"{source.objectId} Copy" : $"{source.displayName} Copy";
+            duplicate.gridPosition = targetPosition;
+            _objects.Add(duplicate);
+            return duplicate;
+        }
+
+        public bool RotateObject(string objectId, Vector3 rotationEuler)
+        {
+            var placement = FindObject(objectId);
+            if (placement == null) return false;
+            placement.rotationEuler = rotationEuler;
+            return true;
+        }
+
+        public bool RemoveObject(string objectId)
+        {
+            var placement = FindObject(objectId);
+            return placement != null && _objects.Remove(placement);
+        }
+
+        public RPGMapEntrance AddEntrance(string entranceId, Vector2Int position, RPGMapDirection facing = RPGMapDirection.South)
+        {
+            if (!IsInBounds(position)) return null;
+            MigrateExpandedMapData();
+            var entrance = new RPGMapEntrance { entranceId = GenerateUniqueEntranceId(entranceId), position = position, facing = facing };
+            _entrances.Add(entrance);
+            return entrance;
+        }
+
+        public RPGMapExit AddExit(string exitId, Vector2Int position, RPGMapDefinition targetMap, string targetEntranceId, RPGMapTransitionKind transitionKind = RPGMapTransitionKind.Fade)
+        {
+            if (!IsInBounds(position)) return null;
+            MigrateExpandedMapData();
+            var exit = new RPGMapExit { exitId = GenerateUniqueExitId(exitId), position = position, targetMap = targetMap, targetMapId = targetMap?.Id.ToString(), targetEntranceId = targetEntranceId, transitionKind = transitionKind };
+            _exits.Add(exit);
+            return exit;
+        }
+
+        public RPGMapConnectionResolution ResolveExitConnection(string exitId)
+        {
+            var exit = ResolveExit(exitId);
+            var targetMap = exit?.targetMap;
+            return new RPGMapConnectionResolution { Exit = exit, TargetMap = targetMap, TargetEntrance = targetMap?.ResolveEntrance(exit?.targetEntranceId) };
+        }
+
         public RPGMapZone AddZone(string displayName, RPGMapZoneKind kind, RectInt bounds, string payloadId = null)
         {
             MigrateExpandedMapData();
@@ -360,6 +516,20 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Maps
             return candidate;
         }
 
+        private string GenerateUniqueObjectId(string displayName) => GenerateUniqueId(displayName, "Object", FindObject);
+        private string GenerateUniqueEntranceId(string displayName) => GenerateUniqueId(displayName, "Entrance", ResolveEntrance);
+        private string GenerateUniqueExitId(string displayName) => GenerateUniqueId(displayName, "Exit", ResolveExit);
+
+        private string GenerateUniqueId<T>(string displayName, string fallback, Func<string, T> finder) where T : class
+        {
+            var stem = new string((displayName ?? fallback).Select(ch => char.IsLetterOrDigit(ch) ? ch : '_').ToArray()).Trim('_');
+            if (string.IsNullOrWhiteSpace(stem)) stem = fallback;
+            var candidate = stem;
+            var index = 1;
+            while (finder(candidate) != null) candidate = $"{stem}_{++index}";
+            return candidate;
+        }
+
         private string GenerateUniqueZoneId(string displayName)
         {
             var stem = new string((displayName ?? "Zone").Select(ch => char.IsLetterOrDigit(ch) ? ch : '_').ToArray()).Trim('_');
@@ -369,6 +539,14 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Maps
             while (FindZone(candidate) != null) candidate = $"{stem}_{++index}";
             return candidate;
         }
+
+        private static RPGMapObjectPlacement CloneObject(RPGMapObjectPlacement source) => new RPGMapObjectPlacement
+        {
+            objectId = source.objectId, displayName = source.displayName, prefab = source.prefab, addressableKey = source.addressableKey, gridPosition = source.gridPosition,
+            worldOffset = source.worldOffset, rotationEuler = source.rotationEuler, scale = source.scale, snapToGrid = source.snapToGrid, spawnConditionKey = source.spawnConditionKey,
+            persistentStateKey = source.persistentStateKey, category = source.category, facing = source.facing, blocksMovement = source.blocksMovement,
+            metadata = source.metadata?.Select(entry => entry == null ? null : new RPGMapMetadataEntry { key = entry.key, value = entry.value }).ToList() ?? new List<RPGMapMetadataEntry>()
+        };
 
         private static RPGMapTile CloneTile(RPGMapTile tile) => tile == null ? null : new RPGMapTile
         {
@@ -426,6 +604,7 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Maps
                 if (placement != null && (!category.HasValue || placement.category == category.Value) && region.Contains(placement.gridPosition)) yield return placement;
         }
 
+        public RPGMapObjectPlacement FindObject(string objectId) => string.IsNullOrWhiteSpace(objectId) ? null : _objects.FirstOrDefault(placement => placement != null && string.Equals(placement.objectId, objectId, StringComparison.OrdinalIgnoreCase));
         public RPGMapEntrance ResolveEntrance(string entranceId) => string.IsNullOrWhiteSpace(entranceId) ? null : _entrances.FirstOrDefault(entrance => entrance != null && string.Equals(entrance.entranceId, entranceId, StringComparison.OrdinalIgnoreCase));
         public RPGMapExit ResolveExit(string exitId) => string.IsNullOrWhiteSpace(exitId) ? null : _exits.FirstOrDefault(exit => exit != null && string.Equals(exit.exitId, exitId, StringComparison.OrdinalIgnoreCase));
         public RPGMapConnection ResolveConnection(string connectionId) => string.IsNullOrWhiteSpace(connectionId) ? null : _connections.FirstOrDefault(connection => connection != null && string.Equals(connection.connectionId, connectionId, StringComparison.OrdinalIgnoreCase));
