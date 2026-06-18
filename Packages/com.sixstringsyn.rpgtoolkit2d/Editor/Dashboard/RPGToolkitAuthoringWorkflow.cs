@@ -246,7 +246,7 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Dashboard
             return BuildCardData(section, lastValidationResults);
         }
 
-        private static RPGValidationResult ValidateAsset(UnityEngine.Object asset)
+        public static RPGValidationResult ValidateAsset(UnityEngine.Object asset)
         {
             switch (asset)
             {

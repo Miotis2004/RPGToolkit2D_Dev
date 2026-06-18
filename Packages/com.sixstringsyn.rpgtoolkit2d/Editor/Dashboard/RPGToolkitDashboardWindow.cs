@@ -13,6 +13,11 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Dashboard
         private string _searchText = string.Empty;
         private int _selectedSection;
         private RPGMapProjectValidationReport _mapValidationReport;
+        private RPGToolkitValidationReport _validationCenterReport;
+        private string _validationCenterSearch = string.Empty;
+        private bool _validationCenterShowErrors = true;
+        private bool _validationCenterShowWarnings = true;
+        private bool _validationCenterShowInfo;
         private readonly Dictionary<string, bool> _expandedCards = new Dictionary<string, bool>();
         private readonly Dictionary<string, string> _lastValidationResults = new Dictionary<string, string>();
 
@@ -34,6 +39,7 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Dashboard
             DrawDatabaseBrowser();
             DrawUtilities();
             DrawValidation();
+            DrawValidationCenter();
             EditorGUILayout.EndScrollView();
         }
 
@@ -267,5 +273,84 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Dashboard
                 EditorGUILayout.EndHorizontal();
             }
         }
+
+        private void DrawValidationCenter()
+        {
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("Validation Center", EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox("Validate every supported RPG content type, filter diagnostics by severity or text, jump to affected assets, preview deterministic repairs, and export a Markdown report.", MessageType.Info);
+
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("Validate All RPG Content"))
+            {
+                _validationCenterReport = RPGToolkitValidationCenter.ValidateAllRPGContent();
+                _lastValidationResults["Validation Center"] = $"{System.DateTime.Now:HH:mm:ss}: {_validationCenterReport.ErrorCount} error(s), {_validationCenterReport.WarningCount} warning(s), {_validationCenterReport.InfoCount} info message(s).";
+            }
+
+            using (new EditorGUI.DisabledScope(_validationCenterReport == null))
+            {
+                if (GUILayout.Button("Copy Markdown Report")) EditorGUIUtility.systemCopyBuffer = RPGToolkitValidationCenter.ExportMarkdown(_validationCenterReport);
+                if (GUILayout.Button("Repair All Safe Issues"))
+                {
+                    var repairCount = RPGToolkitValidationCenter.RepairAllSafe(_validationCenterReport);
+                    EditorUtility.DisplayDialog("RPG Toolkit Repairs", $"Applied {repairCount} safe repair(s). Re-run validation to refresh diagnostics.", "OK");
+                }
+            }
+            EditorGUILayout.EndHorizontal();
+
+            EditorGUILayout.BeginHorizontal();
+            _validationCenterShowErrors = EditorGUILayout.ToggleLeft("Errors", _validationCenterShowErrors, GUILayout.Width(80f));
+            _validationCenterShowWarnings = EditorGUILayout.ToggleLeft("Warnings", _validationCenterShowWarnings, GUILayout.Width(100f));
+            _validationCenterShowInfo = EditorGUILayout.ToggleLeft("Info", _validationCenterShowInfo, GUILayout.Width(80f));
+            GUILayout.Label("Search", GUILayout.Width(48f));
+            _validationCenterSearch = EditorGUILayout.TextField(_validationCenterSearch);
+            EditorGUILayout.EndHorizontal();
+
+            if (_validationCenterReport == null)
+            {
+                EditorGUILayout.LabelField("No validation report has been generated this editor session.", EditorStyles.wordWrappedMiniLabel);
+                return;
+            }
+
+            EditorGUILayout.HelpBox($"Validation Center: {_validationCenterReport.ErrorCount} error(s), {_validationCenterReport.WarningCount} warning(s), {_validationCenterReport.InfoCount} info message(s).", _validationCenterReport.Passed ? MessageType.Info : MessageType.Warning);
+            var diagnostics = RPGToolkitValidationCenter.Filter(_validationCenterReport, _validationCenterShowErrors, _validationCenterShowWarnings, _validationCenterShowInfo, _validationCenterSearch);
+            foreach (var group in diagnostics.GroupBy(diagnostic => diagnostic.Section.Title))
+            {
+                EditorGUILayout.LabelField(group.Key, EditorStyles.boldLabel);
+                foreach (var diagnostic in group)
+                {
+                    EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+                    EditorGUILayout.BeginHorizontal();
+                    EditorGUILayout.ObjectField(diagnostic.Asset, typeof(UnityEngine.Object), false);
+                    if (GUILayout.Button("Ping", GUILayout.Width(56f)) && diagnostic.Asset != null) EditorGUIUtility.PingObject(diagnostic.Asset);
+                    if (GUILayout.Button("Select", GUILayout.Width(60f)) && diagnostic.Asset != null) Selection.activeObject = diagnostic.Asset;
+                    if (GUILayout.Button("Open", GUILayout.Width(56f)) && diagnostic.Asset != null) AssetDatabase.OpenAsset(diagnostic.Asset);
+                    EditorGUILayout.EndHorizontal();
+                    EditorGUILayout.HelpBox($"[{diagnostic.Message.Code}] {diagnostic.Message.Message}", ToMessageType(diagnostic.Message.Severity));
+                    if (diagnostic.HasRepair)
+                    {
+                        EditorGUILayout.LabelField("Repair preview: " + diagnostic.RepairPreview, EditorStyles.wordWrappedMiniLabel);
+                        if (GUILayout.Button("Apply Safe Repair"))
+                        {
+                            diagnostic.RepairAction.Invoke();
+                            AssetDatabase.SaveAssets();
+                            EditorUtility.DisplayDialog("RPG Toolkit Repair", "Applied safe repair. Re-run validation to refresh diagnostics.", "OK");
+                        }
+                    }
+                    EditorGUILayout.EndVertical();
+                }
+            }
+        }
+
+        private static MessageType ToMessageType(SixStringSyn.RPGToolkit2D.Runtime.Core.RPGValidationSeverity severity)
+        {
+            switch (severity)
+            {
+                case SixStringSyn.RPGToolkit2D.Runtime.Core.RPGValidationSeverity.Error: return MessageType.Error;
+                case SixStringSyn.RPGToolkit2D.Runtime.Core.RPGValidationSeverity.Warning: return MessageType.Warning;
+                default: return MessageType.Info;
+            }
+        }
+
     }
 }
