@@ -99,3 +99,10 @@ All notable changes to RPG Toolkit 2D will be documented in this file.
 ### Known Gaps
 - `com.unity.cinemachine` and `com.unity.addressables` are required by the development plan but are not currently present in `Packages/manifest.json`.
 - Unity Editor validation, package resolution, edit mode tests, and play mode tests still need to be run in an environment with Unity available.
+
+## [1.0.0] - Phase 11 Release Hardening
+
+### Added
+- Added runtime map release compatibility helpers with a stable diagnostic-code catalog and release-safe map validation entry point.
+- Added package hardening checks for missing `.meta` files and editor-only references in runtime scripts.
+- Added runtime tests covering diagnostic stability and legacy map migration during release validation.
