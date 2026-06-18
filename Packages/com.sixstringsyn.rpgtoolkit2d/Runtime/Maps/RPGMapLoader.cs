@@ -58,6 +58,7 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Maps
         [SerializeField] private bool _loadOnStart;
         [SerializeField] private bool _unloadPreviousMap = true;
         [SerializeField] private Vector3 _cellSize = Vector3.one;
+        [SerializeField] private int _tilemapChunkSize = 32;
 
         private readonly IRPGMapTileResolver _generatedTileResolver = new RPGGeneratedTileResolver();
         private RPGLoadedMap _loadedMap;
@@ -73,6 +74,7 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Maps
         public IRPGMapPrefabResolver PrefabResolver { get; set; }
         public IRPGMapObjectStateResolver StateResolver { get; set; }
         public IRPGMapTransitionHandler TransitionHandler { get; set; }
+        public int TilemapChunkSize { get => _tilemapChunkSize; set => _tilemapChunkSize = Mathf.Max(1, value); }
 
         private void Start()
         {
@@ -133,21 +135,79 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Maps
                 tilemap.color = new Color(1f, 1f, 1f, Mathf.Clamp01(layer.opacity));
                 tilemap.gameObject.SetActive(layer.visible);
 
-                foreach (var placement in layer.tiles ?? Enumerable.Empty<RPGMapTile>())
-                {
-                    var tileDefinition = map.Tileset?.FindTile(placement.tileId);
-                    var tile = (TileResolver ?? _generatedTileResolver).ResolveTile(tileDefinition, placement);
-                    if (tile == null) continue;
-                    var cell = new Vector3Int(placement.position.x, placement.position.y, 0);
-                    tilemap.SetTile(cell, tile);
-                    tilemap.SetTransformMatrix(cell, BuildTileTransform(placement));
-                }
+                SetLayerTiles(map, layer, tilemap);
 
                 if (_collisionMode == RPGMapCollisionMode.TilemapCollider2D && LayerNeedsCollider(map, layer)) layerObject.AddComponent<TilemapCollider2D>();
                 loaded._tilemapsByLayerId[layer.layerId] = tilemap;
             }
 
             if (_collisionMode == RPGMapCollisionMode.GeneratedColliderObjects) BuildGeneratedColliders(map, loaded);
+        }
+
+
+        private void SetLayerTiles(RPGMapDefinition map, RPGMapLayer layer, Tilemap tilemap)
+        {
+            var placements = (layer.tiles ?? Enumerable.Empty<RPGMapTile>()).Where(placement => placement != null).ToArray();
+            if (placements.Length == 0) return;
+
+            var minX = placements.Min(placement => placement.position.x);
+            var minY = placements.Min(placement => placement.position.y);
+            var maxX = placements.Max(placement => placement.position.x);
+            var maxY = placements.Max(placement => placement.position.y);
+            var bounds = new BoundsInt(minX, minY, 0, maxX - minX + 1, maxY - minY + 1, 1);
+            var densityPercent = bounds.size.x <= 0 || bounds.size.y <= 0 ? 0 : Mathf.RoundToInt(placements.Length * 100f / (bounds.size.x * bounds.size.y));
+            var profile = map.PerformanceSettings?.storageProfile ?? RPGMapStorageProfile.Auto;
+            var shouldBatch = profile == RPGMapStorageProfile.Dense || profile == RPGMapStorageProfile.Chunked || (profile == RPGMapStorageProfile.Auto && densityPercent >= (map.PerformanceSettings?.denseLayerThresholdPercent ?? 60));
+
+            if (shouldBatch)
+            {
+                IEnumerable<BoundsInt> chunkBoundsSource = profile == RPGMapStorageProfile.Chunked
+                    ? EnumerateChunkBounds(bounds, map.PerformanceSettings?.chunkSize ?? new Vector2Int(_tilemapChunkSize, _tilemapChunkSize))
+                    : new[] { bounds };
+                foreach (var chunkBounds in chunkBoundsSource)
+                    SetTileBlock(map, tilemap, placements.Where(placement => chunkBounds.Contains(new Vector3Int(placement.position.x, placement.position.y, 0))).ToArray(), chunkBounds);
+            }
+            else
+            {
+                foreach (var placement in placements)
+                {
+                    var tileDefinition = map.Tileset?.FindTile(placement.tileId);
+                    var tile = (TileResolver ?? _generatedTileResolver).ResolveTile(tileDefinition, placement);
+                    if (tile == null) continue;
+                    tilemap.SetTile(new Vector3Int(placement.position.x, placement.position.y, 0), tile);
+                }
+            }
+
+            foreach (var placement in placements)
+            {
+                if (placement.rotationDegrees == 0 && !placement.flipX && !placement.flipY) continue;
+                tilemap.SetTransformMatrix(new Vector3Int(placement.position.x, placement.position.y, 0), BuildTileTransform(placement));
+            }
+        }
+
+
+        private void SetTileBlock(RPGMapDefinition map, Tilemap tilemap, IReadOnlyList<RPGMapTile> placements, BoundsInt bounds)
+        {
+            if (placements == null || placements.Count == 0) return;
+            var tiles = new TileBase[bounds.size.x * bounds.size.y];
+            foreach (var placement in placements)
+            {
+                var tileDefinition = map.Tileset?.FindTile(placement.tileId);
+                var tile = (TileResolver ?? _generatedTileResolver).ResolveTile(tileDefinition, placement);
+                if (tile == null) continue;
+                var index = placement.position.x - bounds.xMin + (placement.position.y - bounds.yMin) * bounds.size.x;
+                tiles[index] = tile;
+            }
+            tilemap.SetTilesBlock(bounds, tiles);
+        }
+
+        private static IEnumerable<BoundsInt> EnumerateChunkBounds(BoundsInt bounds, Vector2Int chunkSize)
+        {
+            var width = Mathf.Max(1, chunkSize.x);
+            var height = Mathf.Max(1, chunkSize.y);
+            for (var y = bounds.yMin; y < bounds.yMax; y += height)
+            for (var x = bounds.xMin; x < bounds.xMax; x += width)
+                yield return new BoundsInt(x, y, 0, Mathf.Min(width, bounds.xMax - x), Mathf.Min(height, bounds.yMax - y), 1);
         }
 
         private void SpawnObjects(RPGMapDefinition map, RPGLoadedMap loaded)

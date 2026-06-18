@@ -12,6 +12,16 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Maps
     public enum RPGMapObjectCategory { NPC, Monster, EncounterSpawn, Item, Chest, Door, ExitTransition, SavePoint, Decoration, Custom }
     public enum RPGMapDirection { None, North, East, South, West }
     public enum RPGMapTransitionKind { Instant, Fade, Door, Stairs, Custom }
+    public enum RPGMapStorageProfile { Auto, Sparse, Dense, Chunked }
+
+    [Serializable]
+    public sealed class RPGMapPerformanceSettings
+    {
+        public RPGMapStorageProfile storageProfile = RPGMapStorageProfile.Auto;
+        public Vector2Int chunkSize = new Vector2Int(32, 32);
+        public bool cacheRuntimeQueries = true;
+        public int denseLayerThresholdPercent = 60;
+    }
 
     [Serializable]
     public sealed class RPGMapMetadataEntry
@@ -211,6 +221,14 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Maps
         [SerializeField] private List<RPGMapObjectPlacement> _objects = new List<RPGMapObjectPlacement>();
         [SerializeField] private List<RPGMapEntrance> _entrances = new List<RPGMapEntrance>();
         [SerializeField] private List<RPGMapExit> _exits = new List<RPGMapExit>();
+        [SerializeField] private RPGMapPerformanceSettings _performanceSettings = new RPGMapPerformanceSettings();
+
+        [NonSerialized] private bool _queryCacheDirty = true;
+        [NonSerialized] private readonly Dictionary<string, Dictionary<Vector2Int, RPGMapTile>> _tilesByLayer = new Dictionary<string, Dictionary<Vector2Int, RPGMapTile>>(StringComparer.OrdinalIgnoreCase);
+        [NonSerialized] private readonly Dictionary<Vector2Int, List<RPGMapTile>> _tilesByPosition = new Dictionary<Vector2Int, List<RPGMapTile>>();
+        [NonSerialized] private readonly Dictionary<Vector2Int, List<RPGMapZone>> _zonesByPosition = new Dictionary<Vector2Int, List<RPGMapZone>>();
+        [NonSerialized] private readonly Dictionary<Vector2Int, List<RPGMapObjectPlacement>> _objectsByPosition = new Dictionary<Vector2Int, List<RPGMapObjectPlacement>>();
+        [NonSerialized] private readonly HashSet<Vector2Int> _blockedPositions = new HashSet<Vector2Int>();
 
         public Vector2Int Size => _size;
         public RPGTilesetDefinition Tileset => _tileset;
@@ -220,9 +238,10 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Maps
         public IReadOnlyList<RPGMapObjectPlacement> Objects => _objects;
         public IReadOnlyList<RPGMapEntrance> Entrances => _entrances;
         public IReadOnlyList<RPGMapExit> Exits => _exits;
+        public RPGMapPerformanceSettings PerformanceSettings => _performanceSettings;
 
         public void OnBeforeSerialize() => MigrateExpandedMapData();
-        public void OnAfterDeserialize() => MigrateExpandedMapData();
+        public void OnAfterDeserialize() { MigrateExpandedMapData(); MarkRuntimeQueryCacheDirty(); }
 
         public void MigrateExpandedMapData()
         {
@@ -232,6 +251,8 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Maps
             if (_objects == null) _objects = new List<RPGMapObjectPlacement>();
             if (_entrances == null) _entrances = new List<RPGMapEntrance>();
             if (_exits == null) _exits = new List<RPGMapExit>();
+            if (_performanceSettings == null) _performanceSettings = new RPGMapPerformanceSettings();
+            if (_performanceSettings.chunkSize.x <= 0 || _performanceSettings.chunkSize.y <= 0) _performanceSettings.chunkSize = new Vector2Int(32, 32);
             for (var i = 0; i < _layers.Count; i++)
             {
                 var layer = _layers[i];
@@ -257,9 +278,10 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Maps
             _size = new Vector2Int(Mathf.Max(1, size.x), Mathf.Max(1, size.y));
             _tileset = tileset;
             MigrateExpandedMapData();
+            MarkRuntimeQueryCacheDirty();
         }
 
-        public void SetTileset(RPGTilesetDefinition tileset) => _tileset = tileset;
+        public void SetTileset(RPGTilesetDefinition tileset) { _tileset = tileset; MarkRuntimeQueryCacheDirty(); }
 
         public RPGMapLayer AddLayer(string displayName = "Layer", RPGMapLayerKind kind = RPGMapLayerKind.Ground)
         {
@@ -276,13 +298,16 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Maps
                 tiles = new List<RPGMapTile>()
             };
             _layers.Add(layer);
+            MarkRuntimeQueryCacheDirty();
             return layer;
         }
 
         public bool RemoveLayer(string layerId)
         {
             var layer = FindLayer(layerId);
-            return layer != null && _layers.Remove(layer);
+            var removed = layer != null && _layers.Remove(layer);
+            if (removed) MarkRuntimeQueryCacheDirty();
+            return removed;
         }
 
         public RPGMapLayer DuplicateLayer(string layerId)
@@ -302,6 +327,7 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Maps
                 tiles = source.tiles?.Select(CloneTile).ToList() ?? new List<RPGMapTile>()
             };
             _layers.Add(duplicate);
+            MarkRuntimeQueryCacheDirty();
             return duplicate;
         }
 
@@ -313,6 +339,7 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Maps
             _layers.Insert(Mathf.Clamp(newIndex, 0, _layers.Count), layer);
             for (var i = 0; i < _layers.Count; i++)
                 if (_layers[i] != null) _layers[i].renderOrder = i;
+            MarkRuntimeQueryCacheDirty();
         }
 
         public bool PaintTile(string layerId, Vector2Int position, string tileId, int rotationDegrees = 0, bool flipX = false, bool flipY = false)
@@ -323,6 +350,7 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Maps
             if (layer.tiles == null) layer.tiles = new List<RPGMapTile>();
             layer.tiles.RemoveAll(tile => tile != null && tile.position == position);
             layer.tiles.Add(new RPGMapTile { position = position, tileId = tileId, rotationDegrees = rotationDegrees, flipX = flipX, flipY = flipY });
+            MarkRuntimeQueryCacheDirty();
             return true;
         }
 
@@ -330,7 +358,9 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Maps
         {
             var layer = FindLayer(layerId);
             if (layer?.tiles == null || layer.locked) return false;
-            return layer.tiles.RemoveAll(tile => tile != null && tile.position == position) > 0;
+            var removed = layer.tiles.RemoveAll(tile => tile != null && tile.position == position) > 0;
+            if (removed) MarkRuntimeQueryCacheDirty();
+            return removed;
         }
 
         public int FillRectangle(string layerId, RectInt bounds, string tileId)
@@ -377,8 +407,23 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Maps
                 tile.tileId = newTileId;
                 changed++;
             }
+            if (changed > 0) MarkRuntimeQueryCacheDirty();
             return changed;
         }
+
+        public int PaintStamp(string layerId, Vector2Int anchor, IEnumerable<RPGMapTile> stampTiles)
+        {
+            var changed = 0;
+            if (stampTiles == null) return changed;
+            foreach (var stampTile in stampTiles)
+            {
+                if (stampTile == null) continue;
+                if (PaintTile(layerId, anchor + stampTile.position, stampTile.tileId, stampTile.rotationDegrees, stampTile.flipX, stampTile.flipY)) changed++;
+            }
+            return changed;
+        }
+
+        public int PaintStamp(string layerId, RPGMapStampDefinition stamp, Vector2Int anchor) => stamp == null ? 0 : PaintStamp(layerId, Vector2Int.zero, stamp.BuildTiles(anchor));
 
 
         public RPGMapObjectPlacement PlaceObject(string displayName, RPGMapObjectCategory category, Vector2Int gridPosition, GameObject prefab = null, bool snapToGrid = true)
@@ -397,6 +442,7 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Maps
                 scale = Vector3.one
             };
             _objects.Add(placement);
+            MarkRuntimeQueryCacheDirty();
             return placement;
         }
 
@@ -406,6 +452,7 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Maps
             if (placement == null || !IsInBounds(gridPosition)) return false;
             placement.gridPosition = gridPosition;
             if (worldOffset.HasValue) placement.worldOffset = worldOffset.Value;
+            MarkRuntimeQueryCacheDirty();
             return true;
         }
 
@@ -419,6 +466,7 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Maps
             duplicate.displayName = string.IsNullOrWhiteSpace(source.displayName) ? $"{source.objectId} Copy" : $"{source.displayName} Copy";
             duplicate.gridPosition = targetPosition;
             _objects.Add(duplicate);
+            MarkRuntimeQueryCacheDirty();
             return duplicate;
         }
 
@@ -433,7 +481,9 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Maps
         public bool RemoveObject(string objectId)
         {
             var placement = FindObject(objectId);
-            return placement != null && _objects.Remove(placement);
+            var removed = placement != null && _objects.Remove(placement);
+            if (removed) MarkRuntimeQueryCacheDirty();
+            return removed;
         }
 
         public RPGMapEntrance AddEntrance(string entranceId, Vector2Int position, RPGMapDirection facing = RPGMapDirection.South)
@@ -442,6 +492,7 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Maps
             MigrateExpandedMapData();
             var entrance = new RPGMapEntrance { entranceId = GenerateUniqueEntranceId(entranceId), position = position, facing = facing };
             _entrances.Add(entrance);
+            MarkRuntimeQueryCacheDirty();
             return entrance;
         }
 
@@ -451,6 +502,7 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Maps
             MigrateExpandedMapData();
             var exit = new RPGMapExit { exitId = GenerateUniqueExitId(exitId), position = position, targetMap = targetMap, targetMapId = targetMap?.Id.ToString(), targetEntranceId = targetEntranceId, transitionKind = transitionKind };
             _exits.Add(exit);
+            MarkRuntimeQueryCacheDirty();
             return exit;
         }
 
@@ -475,13 +527,16 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Maps
                 priority = _zones.Count == 0 ? 0 : _zones.Max(existing => existing?.priority ?? 0) + 1
             };
             _zones.Add(zone);
+            MarkRuntimeQueryCacheDirty();
             return zone;
         }
 
         public bool RemoveZone(string zoneId)
         {
             var zone = FindZone(zoneId);
-            return zone != null && _zones.Remove(zone);
+            var removed = zone != null && _zones.Remove(zone);
+            if (removed) MarkRuntimeQueryCacheDirty();
+            return removed;
         }
 
         public RPGMapZone FindZone(string zoneId) => string.IsNullOrWhiteSpace(zoneId) ? null : _zones.FirstOrDefault(zone => zone != null && string.Equals(zone.zoneId, zoneId, StringComparison.OrdinalIgnoreCase));
@@ -491,6 +546,7 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Maps
             var zone = FindZone(zoneId);
             if (zone == null || !IsInBounds(position)) return false;
             zone.bounds = RectUnion(zone.bounds, new RectInt(position.x, position.y, 1, 1));
+            MarkRuntimeQueryCacheDirty();
             return true;
         }
 
@@ -503,6 +559,7 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Maps
             else if (position.x == zone.bounds.xMax - 1) zone.bounds = new RectInt(zone.bounds.xMin, zone.bounds.yMin, zone.bounds.width - 1, zone.bounds.height);
             if (position.y == zone.bounds.yMin) zone.bounds = new RectInt(zone.bounds.xMin, zone.bounds.yMin + 1, zone.bounds.width, zone.bounds.height - 1);
             else if (position.y == zone.bounds.yMax - 1) zone.bounds = new RectInt(zone.bounds.xMin, zone.bounds.yMin, zone.bounds.width, zone.bounds.height - 1);
+            MarkRuntimeQueryCacheDirty();
             return true;
         }
 
@@ -574,7 +631,9 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Maps
 
         public IEnumerable<RPGMapZone> GetZonesAt(Vector2Int position, RPGMapZoneKind? kind = null, string tag = null)
         {
-            foreach (var zone in _zones.OrderByDescending(zone => zone?.priority ?? int.MinValue).ThenBy(zone => zone?.zoneId))
+            EnsureRuntimeQueryCache();
+            IEnumerable<RPGMapZone> source = _zonesByPosition.TryGetValue(position, out var cachedZones) ? cachedZones : Enumerable.Empty<RPGMapZone>();
+            foreach (var zone in source.OrderByDescending(zone => zone?.priority ?? int.MinValue).ThenBy(zone => zone?.zoneId))
             {
                 if (zone == null || (kind.HasValue && zone.kind != kind.Value) || !zone.bounds.Contains(position)) continue;
                 if (!string.IsNullOrWhiteSpace(tag) && (zone.tags == null || !zone.tags.Any(value => string.Equals(value, tag, StringComparison.OrdinalIgnoreCase)))) continue;
@@ -586,22 +645,24 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Maps
 
         public IEnumerable<RPGMapTile> GetTilesAt(Vector2Int position)
         {
-            foreach (var layer in _layers.OrderBy(layer => layer?.renderOrder ?? 0))
-                if (layer?.tiles != null)
-                    foreach (var tile in layer.tiles)
-                        if (tile != null && tile.position == position) yield return tile;
+            EnsureRuntimeQueryCache();
+            return _tilesByPosition.TryGetValue(position, out var tiles) ? (IEnumerable<RPGMapTile>)tiles : Enumerable.Empty<RPGMapTile>();
         }
 
         public RPGMapTile GetLayerTile(string layerId, Vector2Int position)
         {
-            var layer = FindLayer(layerId);
-            return layer?.tiles?.LastOrDefault(tile => tile != null && tile.position == position);
+            EnsureRuntimeQueryCache();
+            return !string.IsNullOrWhiteSpace(layerId) && _tilesByLayer.TryGetValue(layerId, out var layerTiles) && layerTiles.TryGetValue(position, out var tile) ? tile : null;
         }
 
         public IEnumerable<RPGMapObjectPlacement> GetObjectsInRegion(RectInt region, RPGMapObjectCategory? category = null)
         {
-            foreach (var placement in _objects)
-                if (placement != null && (!category.HasValue || placement.category == category.Value) && region.Contains(placement.gridPosition)) yield return placement;
+            EnsureRuntimeQueryCache();
+            for (var y = region.yMin; y < region.yMax; y++)
+            for (var x = region.xMin; x < region.xMax; x++)
+                if (_objectsByPosition.TryGetValue(new Vector2Int(x, y), out var placements))
+                    foreach (var placement in placements)
+                        if (placement != null && (!category.HasValue || placement.category == category.Value)) yield return placement;
         }
 
         public RPGMapObjectPlacement FindObject(string objectId) => string.IsNullOrWhiteSpace(objectId) ? null : _objects.FirstOrDefault(placement => placement != null && string.Equals(placement.objectId, objectId, StringComparison.OrdinalIgnoreCase));
@@ -611,18 +672,8 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Maps
 
         public bool IsBlocked(Vector2Int position)
         {
-            foreach (var tile in GetTilesAt(position))
-            {
-                if (tile.overrideCollision) { if (tile.blocksMovementOverride) return true; continue; }
-                var definition = _tileset?.FindTile(tile.tileId);
-                if (definition?.blocksMovement == true) return true;
-            }
-            foreach (var layer in _layers)
-            {
-                if (layer == null || layer.kind != RPGMapLayerKind.Collision) continue;
-                if (layer.tiles != null && layer.tiles.Any(tile => tile != null && tile.position == position && (!tile.overrideCollision || tile.blocksMovementOverride))) return true;
-            }
-            return _objects.Any(placement => placement != null && placement.blocksMovement && placement.gridPosition == position);
+            EnsureRuntimeQueryCache();
+            return _blockedPositions.Contains(position);
         }
 
         public RPGMapCellMetadata GetCellMetadata(Vector2Int position)
@@ -646,9 +697,58 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Maps
             return cell;
         }
 
-        public RPGMapTile GetTopTile(Vector2Int position) => _layers.OrderBy(layer => layer?.renderOrder ?? 0).SelectMany(layer => layer?.tiles ?? Enumerable.Empty<RPGMapTile>()).LastOrDefault(tile => tile != null && tile.position == position);
+        public RPGMapTile GetTopTile(Vector2Int position) => GetTilesAt(position).LastOrDefault();
 
         public RPGMapLayer FindLayer(string layerId) => string.IsNullOrWhiteSpace(layerId) ? null : _layers.FirstOrDefault(layer => layer != null && string.Equals(layer.layerId, layerId, StringComparison.OrdinalIgnoreCase));
+
+
+        public void MarkRuntimeQueryCacheDirty() => _queryCacheDirty = true;
+
+        public void BuildRuntimeQueryCache()
+        {
+            _tilesByLayer.Clear();
+            _tilesByPosition.Clear();
+            _zonesByPosition.Clear();
+            _objectsByPosition.Clear();
+            _blockedPositions.Clear();
+
+            foreach (var layer in _layers.Where(layer => layer != null).OrderBy(layer => layer.renderOrder))
+            {
+                if (string.IsNullOrWhiteSpace(layer.layerId)) continue;
+                var layerTiles = new Dictionary<Vector2Int, RPGMapTile>();
+                foreach (var tile in layer.tiles ?? Enumerable.Empty<RPGMapTile>())
+                {
+                    if (tile == null) continue;
+                    layerTiles[tile.position] = tile;
+                    if (!_tilesByPosition.TryGetValue(tile.position, out var stackedTiles)) _tilesByPosition[tile.position] = stackedTiles = new List<RPGMapTile>();
+                    stackedTiles.Add(tile);
+                    var definition = _tileset?.FindTile(tile.tileId);
+                    if ((tile.overrideCollision && tile.blocksMovementOverride) || (!tile.overrideCollision && (definition?.blocksMovement == true || layer.kind == RPGMapLayerKind.Collision))) _blockedPositions.Add(tile.position);
+                }
+                _tilesByLayer[layer.layerId] = layerTiles;
+            }
+
+            foreach (var zone in _zones.Where(zone => zone != null))
+                foreach (var position in EnumerateClamped(zone.bounds))
+                {
+                    if (!_zonesByPosition.TryGetValue(position, out var zones)) _zonesByPosition[position] = zones = new List<RPGMapZone>();
+                    zones.Add(zone);
+                }
+
+            foreach (var placement in _objects.Where(placement => placement != null))
+            {
+                if (!_objectsByPosition.TryGetValue(placement.gridPosition, out var placements)) _objectsByPosition[placement.gridPosition] = placements = new List<RPGMapObjectPlacement>();
+                placements.Add(placement);
+                if (placement.blocksMovement) _blockedPositions.Add(placement.gridPosition);
+            }
+            _queryCacheDirty = false;
+        }
+
+        private void EnsureRuntimeQueryCache()
+        {
+            if (_performanceSettings?.cacheRuntimeQueries == false) MarkRuntimeQueryCacheDirty();
+            if (_queryCacheDirty) BuildRuntimeQueryCache();
+        }
 
         public RPGValidationResult ValidateMap()
         {
