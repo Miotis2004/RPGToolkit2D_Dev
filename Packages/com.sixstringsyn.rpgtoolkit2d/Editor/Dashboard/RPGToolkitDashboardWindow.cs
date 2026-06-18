@@ -197,6 +197,7 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Dashboard
         {
             EditorGUILayout.LabelField("Focused Tools", EditorStyles.boldLabel);
             EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("Character Editor")) global::SixStringSyn.RPGToolkit2D.Editor.Windows.CharacterEditorWindow.Open();
             if (GUILayout.Button("Quest Editor")) global::SixStringSyn.RPGToolkit2D.Editor.QuestEditor.QuestEditorWindow.Open();
             if (GUILayout.Button("Dialogue Graph")) global::SixStringSyn.RPGToolkit2D.Editor.DialogueGraph.DialogueGraphEditorWindow.Open();
             if (GUILayout.Button("Item Database")) global::SixStringSyn.RPGToolkit2D.Editor.Windows.ItemDatabaseWindow.Open();
