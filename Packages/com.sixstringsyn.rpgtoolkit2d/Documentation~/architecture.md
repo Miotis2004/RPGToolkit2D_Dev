@@ -111,3 +111,9 @@ Phase 2 adds shared runtime primitives that every RPG system can reuse.
 - `RPGValidationResult` and `RPGValidationMessage` provide runtime-safe diagnostics that editor tools can display without coupling core code to UnityEditor APIs.
 
 The initial base content definitions are `CharacterDefinition`, `ItemDefinition`, `QuestDefinition`, `DialogueDefinition`, and `AbilityDefinition`. Each can be created through **Assets > Create > RPG Toolkit** menu entries.
+
+## Phase 1 Sprite Sheet Pipeline
+
+Sprite sheet imports now follow a deterministic metadata pipeline: a `Texture2D` source is paired with an `RPGSpriteSheetProfile`, then an `RPGSpriteSheetAsset` stores generated frame records. Profiles define slicing mode, margin, spacing, frame naming, grid orientation, ordering, default tags, animation grouping hints, and default tile collision flags. Frame records store stable frame IDs, source pixel rectangles, normalized UVs, tags, group or animation keys, default tile flags, and optional runtime address keys.
+
+Designers can open **Tools > RPG Toolkit > Maps > Sprite Sheet Editor** to create profiles, create sprite sheet assets from selected textures, generate grid metadata, preview the source texture, and review validation diagnostics before using frames in tilesets and maps.
