@@ -268,7 +268,7 @@ Deliverables:
 
 **Exit criteria:** Designers can annotate maps, schedule NPC behavior, and create story sequences that integrate with dialogue, quests, variables, and events. The package now includes tileset and layered map assets, runtime map zone/blocker queries, validation for tile/link/layer issues, NPC schedule assets with time-of-day resolution, and cutscene graph assets with skippable playback metadata and link validation.
 
-## Phase 5: Advanced Gameplay Editors
+## Phase 5: Advanced Gameplay Editors (Implemented)
 
 **Goal:** Add differentiating RPG systems that expand the toolkit beyond basic quest/dialogue workflows.
 
@@ -344,7 +344,7 @@ Deliverables:
 - Crafting station metadata.
 - Inventory integration hooks.
 
-**Exit criteria:** Designers can author progression, factions, loot, and crafting through editor tools with minimal or no coding.
+**Exit criteria:** Designers can author progression, factions, loot, and crafting through editor tools with minimal or no coding. The package now includes faction databases with reputation thresholds and runtime conditions, skill tree graph assets with unlock progression, nested weighted loot tables with deterministic simulation hooks, and crafting recipe databases with station metadata and validation-oriented editor windows.
 
 ## Phase 6: AI Tooling
 

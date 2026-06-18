@@ -313,3 +313,13 @@ Examples:
 - **Crafting station:** create a recipe with `StationId` set to `alchemy`; it will validate only when the active station passes the same id.
 
 Save/load behavior is contributor-based. Register `WorldStateSaveContributor` and `PartySaveContributor` with `SaveGameService` so these systems write independent JSON payloads into the normal game save.
+
+## Phase 5 Advanced Gameplay Editors
+
+Phase 5 adds authoring/runtime foundations for differentiating RPG systems. `FactionDatabase` groups `FactionDefinition` assets and validates duplicate faction ids, while `ReputationSystem`, `ReputationModifier`, and `ReputationCondition` provide runtime reputation changes for dialogue, quests, events, vendors, and AI hostility checks.
+
+`SkillTreeDefinition` stores designer-authored skill nodes, prerequisites, point costs, and editor positions. `SkillTreeProgression` evaluates unlock rules and spends available skill points only after all prerequisites are unlocked.
+
+`LootTableDefinition` now supports weighted item entries and nested loot tables. `LootRoller.Simulate` runs deterministic seeded simulations so designers can test rare drops and chest/enemy rewards before wiring them into gameplay.
+
+`CraftingDatabase` collects recipe assets and station metadata. Recipe and database validation catches missing stations, ingredients, outputs, and invalid quantities before inventory-integrated crafting is exposed to players.
