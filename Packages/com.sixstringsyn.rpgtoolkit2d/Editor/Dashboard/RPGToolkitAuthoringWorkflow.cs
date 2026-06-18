@@ -226,7 +226,7 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Dashboard
             return result;
         }
 
-        public static RPGToolkitDashboardCardData BuildCardData(RPGToolkitAuthoringSection section, IReadOnlyDictionary<string, string> lastValidationResults = null)
+        public static RPGToolkitDashboardCardData BuildCardData(RPGToolkitAuthoringSection section, IDictionary<string, string> lastValidationResults = null)
         {
             if (section == null) throw new ArgumentNullException(nameof(section));
             var entries = FindAssets(section);
