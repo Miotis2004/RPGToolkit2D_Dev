@@ -1,0 +1,20 @@
+# Keep source, documentation, samples, tests, and package metadata in published UPM archives.
+# Exclude transient Unity/editor artifacts if they are created inside the package folder.
+Library/
+Temp/
+Obj/
+Build/
+Builds/
+Logs/
+UserSettings/
+*.csproj
+*.sln
+*.suo
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.tmp
+*.log
+.DS_Store
+Thumbs.db

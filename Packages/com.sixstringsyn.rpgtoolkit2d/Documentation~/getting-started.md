@@ -8,8 +8,9 @@
 4. Select **+ > Add package from disk...**.
 5. Choose `package.json` from the `com.sixstringsyn.rpgtoolkit2d` folder.
 6. Confirm **RPG Toolkit 2D** appears in Package Manager.
-7. Open **Tools > RPG Toolkit > Dashboard** to verify the package foundation.
+7. Optional: expand **Samples** and import **Basic RPG Setup** to add the onboarding checklist to your project.
+8. Open **Tools > RPG Toolkit > Dashboard** to verify the package foundation.
 
 ## Next Steps
 
-The Phase 1 package shell includes assemblies, documentation, tests, and a placeholder dashboard. Later phases will add data models, content definitions, RPG systems, and sample scenes.
+Use the dashboard to create an `Assets/RPGToolkit2D` authoring folder, then create an item, character, quest, and dialogue definition. The package includes runtime systems, editor tooling, tests, documentation, and a lightweight Package Manager sample; full scene sample packs can be added later without changing the package layout.
