@@ -62,7 +62,7 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Dashboard
 
     public sealed class RPGToolkitAuthoringSection
     {
-        public RPGToolkitAuthoringSection(string title, string description, Type assetType, string defaultFileName, string menuPath, string documentationPath, RPGToolkitDashboardCapability capability, Action openEditor = null)
+        public RPGToolkitAuthoringSection(string title, string description, Type assetType, string defaultFileName, string menuPath, string documentationPath, string setupHint, bool warnWhenEmpty, RPGToolkitDashboardCapability capability, Action openEditor = null)
         {
             Title = title;
             Description = description;
@@ -70,6 +70,8 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Dashboard
             DefaultFileName = defaultFileName;
             MenuPath = menuPath;
             DocumentationPath = documentationPath;
+            SetupHint = setupHint ?? string.Empty;
+            WarnWhenEmpty = warnWhenEmpty;
             Capability = capability ?? throw new ArgumentNullException(nameof(capability));
             OpenEditor = openEditor;
         }
@@ -80,8 +82,34 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Dashboard
         public string DefaultFileName { get; }
         public string MenuPath { get; }
         public string DocumentationPath { get; }
+        public string SetupHint { get; }
+        public bool WarnWhenEmpty { get; }
         public RPGToolkitDashboardCapability Capability { get; }
         public Action OpenEditor { get; }
+    }
+
+    public sealed class RPGToolkitDashboardCardData
+    {
+        public RPGToolkitDashboardCardData(RPGToolkitAuthoringSection section, IReadOnlyList<RPGToolkitAssetBrowserEntry> entries, int invalidAssetCount, int validationMessageCount, string lastValidationSummary)
+        {
+            Section = section ?? throw new ArgumentNullException(nameof(section));
+            Entries = entries ?? Array.Empty<RPGToolkitAssetBrowserEntry>();
+            AssetCount = Entries.Count;
+            DuplicateIdCount = Entries.Count(entry => entry.DuplicateId);
+            InvalidAssetCount = invalidAssetCount;
+            ValidationMessageCount = validationMessageCount;
+            LastValidationSummary = lastValidationSummary ?? "Not validated yet.";
+        }
+
+        public RPGToolkitAuthoringSection Section { get; }
+        public IReadOnlyList<RPGToolkitAssetBrowserEntry> Entries { get; }
+        public int AssetCount { get; }
+        public int DuplicateIdCount { get; }
+        public int InvalidAssetCount { get; }
+        public int ValidationMessageCount { get; }
+        public string LastValidationSummary { get; }
+        public bool HasWarnings => DuplicateIdCount > 0 || InvalidAssetCount > 0 || (Section.WarnWhenEmpty && AssetCount == 0);
+        public string EmptyContentWarning => Section.WarnWhenEmpty && AssetCount == 0 ? $"No {Section.Title.ToLowerInvariant()} found yet." : string.Empty;
     }
 
     public sealed class RPGToolkitAssetBrowserEntry
@@ -106,28 +134,28 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Dashboard
 
         private static readonly IReadOnlyList<RPGToolkitAuthoringSection> _sections = new List<RPGToolkitAuthoringSection>
         {
-            CreateSection("Characters", "Create heroes, enemies, party members, and stat templates.", typeof(CharacterDefinition), "NewCharacterDefinition.asset", "Assets/Create/RPG Toolkit/Character Definition", EditorToolsDocumentationAnchorPrefix + "characters", RPGToolkitDashboardCapabilityStatus.Missing, RPGToolkitDashboardCapabilityStatus.Partial, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, "Asset creation and database discovery work; a focused Character Editor; per-card documentation links are available."),
-            CreateSection("Items", "Create consumables, equipment, quest items, and inventory content.", typeof(ItemDefinition), "NewItemDefinition.asset", "Assets/Create/RPG Toolkit/Item Definition", EditorToolsDocumentationAnchorPrefix + "items", RPGToolkitDashboardCapabilityStatus.Partial, RPGToolkitDashboardCapabilityStatus.Partial, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, "Item assets are supported and the Item Database exists, but full editing and validation are partial while deep-link docs are available.", global::SixStringSyn.RPGToolkit2D.Editor.Windows.ItemDatabaseWindow.Open),
-            CreateSection("Quests", "Author objectives, conditions, rewards, and turn-in behavior.", typeof(QuestDefinition), "NewQuestDefinition.asset", "Tools/RPG Toolkit/Quest Editor", EditorToolsDocumentationAnchorPrefix + "quests", RPGToolkitDashboardCapabilityStatus.Partial, RPGToolkitDashboardCapabilityStatus.Partial, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, "Quest Editor is available for core workflows, but it is not yet a full visual workflow editor.", global::SixStringSyn.RPGToolkit2D.Editor.QuestEditor.QuestEditorWindow.Open),
-            CreateSection("Dialogue", "Build branching conversations and command-driven narrative flow.", typeof(DialogueDefinition), "NewDialogueDefinition.asset", "Tools/RPG Toolkit/Dialogue Graph Editor", EditorToolsDocumentationAnchorPrefix + "dialogue", RPGToolkitDashboardCapabilityStatus.Partial, RPGToolkitDashboardCapabilityStatus.Partial, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, "Dialogue Graph is available but still needs complete visual workflow coverage while section-specific docs are available.", global::SixStringSyn.RPGToolkit2D.Editor.DialogueGraph.DialogueGraphEditorWindow.Open),
-            CreateSection("Abilities", "Create reusable abilities for combat, interactions, and custom effects.", typeof(AbilityDefinition), "NewAbilityDefinition.asset", "Tools/RPG Toolkit/Ability Editor", EditorToolsDocumentationAnchorPrefix + "abilities", RPGToolkitDashboardCapabilityStatus.Partial, RPGToolkitDashboardCapabilityStatus.Missing, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, "Ability Editor currently provides a lightweight asset-picker entry point and needs a dedicated editor.", global::SixStringSyn.RPGToolkit2D.Editor.Windows.AbilityEditorWindow.Open),
-            CreateSection("Vendors", "Configure shops, prices, stock, buy/sell rules, and inventory integration.", typeof(VendorDefinition), "NewVendorDefinition.asset", "Tools/RPG Toolkit/Vendor Editor", EditorToolsDocumentationAnchorPrefix + "vendors", RPGToolkitDashboardCapabilityStatus.Partial, RPGToolkitDashboardCapabilityStatus.Missing, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, "Vendor Editor currently provides a lightweight asset-picker entry point and needs stock/pricing workflow UI.", global::SixStringSyn.RPGToolkit2D.Editor.Windows.VendorEditorWindow.Open),
-            CreateSection("Loot Tables", "Define weighted drops for chests, encounters, rewards, and vendors.", typeof(LootTableDefinition), "NewLootTableDefinition.asset", "Tools/RPG Toolkit/Loot Table Editor", EditorToolsDocumentationAnchorPrefix + "loot-tables", RPGToolkitDashboardCapabilityStatus.Partial, RPGToolkitDashboardCapabilityStatus.Missing, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, "Loot Table Editor currently provides a lightweight asset-picker entry point and needs weighted-drop editing UI.", global::SixStringSyn.RPGToolkit2D.Editor.Windows.LootTableEditorWindow.Open),
-            CreateSection("NPCs", "Create NPC metadata, dialogue links, party hooks, and world-state keys.", typeof(NPCDefinition), "NewNPCDefinition.asset", "Assets/Create/RPG Toolkit/NPC Definition", EditorToolsDocumentationAnchorPrefix + "npcs", RPGToolkitDashboardCapabilityStatus.Missing, RPGToolkitDashboardCapabilityStatus.Partial, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, "Asset creation and database discovery work; a focused NPC Editor; per-card documentation links are available."),
-            CreateSection("Maps", "Author tile layers, zones, entrances, exits, object placements, and transitions.", typeof(RPGMapDefinition), "NewMapDefinition.asset", "Tools/RPG Toolkit/Maps/Map Editor", EditorToolsDocumentationAnchorPrefix + "maps", RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, "Map authoring has focused tools and validation entry points; deep-link documentation is available.", global::SixStringSyn.RPGToolkit2D.Editor.Windows.MapEditorWindow.Open),
-            CreateSection("Tilesets", "Bridge sprite frames to tile metadata, collision defaults, palettes, and map painting.", typeof(RPGTilesetDefinition), "NewTilesetDefinition.asset", "Tools/RPG Toolkit/Maps/Tileset Editor", EditorToolsDocumentationAnchorPrefix + "tilesets", RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, "Tileset authoring has focused tools and validation entry points; deep-link documentation is available.", global::SixStringSyn.RPGToolkit2D.Editor.Windows.TilesetEditorWindow.Open),
-            CreateSection("Sprite Sheets", "Manage source textures, generated frame metadata, tags, groups, and tile defaults.", typeof(RPGSpriteSheetAsset), "NewSpriteSheetAsset.asset", "Tools/RPG Toolkit/Maps/Sprite Sheet Editor", EditorToolsDocumentationAnchorPrefix + "sprite-sheets", RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, "Sprite sheet authoring has focused tools and validation entry points; deep-link documentation is available.", global::SixStringSyn.RPGToolkit2D.Editor.Windows.SpriteSheetEditorWindow.Open),
-            CreateSection("Sprite Sheet Profiles", "Define slicing rules, grid dimensions, naming patterns, pivots, and pixels per unit.", typeof(RPGSpriteSheetProfile), "NewSpriteSheetProfile.asset", "Assets/Create/RPG Toolkit/Foundation/Sprite Sheet Profile", EditorToolsDocumentationAnchorPrefix + "sprite-sheet-profiles", RPGToolkitDashboardCapabilityStatus.Missing, RPGToolkitDashboardCapabilityStatus.Partial, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, "Profiles support asset creation/runtime use, but no focused profile editor exists yet; deep-link documentation is available.")
+            CreateSection("Characters", "Create heroes, enemies, party members, and stat templates.", typeof(CharacterDefinition), "NewCharacterDefinition.asset", "Assets/Create/RPG Toolkit/Character Definition", EditorToolsDocumentationAnchorPrefix + "characters", "Characters usually need stats, resources, tags, and save/party integration before use.", true, RPGToolkitDashboardCapabilityStatus.Missing, RPGToolkitDashboardCapabilityStatus.Partial, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, "Asset creation and database discovery work; a focused Character Editor; per-card documentation links are available."),
+            CreateSection("Items", "Create consumables, equipment, quest items, and inventory content.", typeof(ItemDefinition), "NewItemDefinition.asset", "Assets/Create/RPG Toolkit/Item Definition", EditorToolsDocumentationAnchorPrefix + "items", "Items power inventory, vendors, loot, crafting, quests, and pickups.", true, RPGToolkitDashboardCapabilityStatus.Partial, RPGToolkitDashboardCapabilityStatus.Partial, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, "Item assets are supported and the Item Database exists, but full editing and validation are partial while deep-link docs are available.", global::SixStringSyn.RPGToolkit2D.Editor.Windows.ItemDatabaseWindow.Open),
+            CreateSection("Quests", "Author objectives, conditions, rewards, and turn-in behavior.", typeof(QuestDefinition), "NewQuestDefinition.asset", "Tools/RPG Toolkit/Quest Editor", EditorToolsDocumentationAnchorPrefix + "quests", "Quests need at least one objective and often reference items, NPCs, dialogue, or world-state keys.", false, RPGToolkitDashboardCapabilityStatus.Partial, RPGToolkitDashboardCapabilityStatus.Partial, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, "Quest Editor is available for core workflows, but it is not yet a full visual workflow editor.", global::SixStringSyn.RPGToolkit2D.Editor.QuestEditor.QuestEditorWindow.Open),
+            CreateSection("Dialogue", "Build branching conversations and command-driven narrative flow.", typeof(DialogueDefinition), "NewDialogueDefinition.asset", "Tools/RPG Toolkit/Dialogue Graph Editor", EditorToolsDocumentationAnchorPrefix + "dialogue", "Dialogue is most useful when linked from NPCs and backed by conditions or commands.", false, RPGToolkitDashboardCapabilityStatus.Partial, RPGToolkitDashboardCapabilityStatus.Partial, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, "Dialogue Graph is available but still needs complete visual workflow coverage while section-specific docs are available.", global::SixStringSyn.RPGToolkit2D.Editor.DialogueGraph.DialogueGraphEditorWindow.Open),
+            CreateSection("Abilities", "Create reusable abilities for combat, interactions, and custom effects.", typeof(AbilityDefinition), "NewAbilityDefinition.asset", "Tools/RPG Toolkit/Ability Editor", EditorToolsDocumentationAnchorPrefix + "abilities", "Abilities should define targeting, costs, cooldowns, tags, and runtime effects.", false, RPGToolkitDashboardCapabilityStatus.Partial, RPGToolkitDashboardCapabilityStatus.Missing, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, "Ability Editor currently provides a lightweight asset-picker entry point and needs a dedicated editor.", global::SixStringSyn.RPGToolkit2D.Editor.Windows.AbilityEditorWindow.Open),
+            CreateSection("Vendors", "Configure shops, prices, stock, buy/sell rules, and inventory integration.", typeof(VendorDefinition), "NewVendorDefinition.asset", "Tools/RPG Toolkit/Vendor Editor", EditorToolsDocumentationAnchorPrefix + "vendors", "Vendors need item stock and pricing rules before they are useful in-game.", false, RPGToolkitDashboardCapabilityStatus.Partial, RPGToolkitDashboardCapabilityStatus.Missing, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, "Vendor Editor currently provides a lightweight asset-picker entry point and needs stock/pricing workflow UI.", global::SixStringSyn.RPGToolkit2D.Editor.Windows.VendorEditorWindow.Open),
+            CreateSection("Loot Tables", "Define weighted drops for chests, encounters, rewards, and vendors.", typeof(LootTableDefinition), "NewLootTableDefinition.asset", "Tools/RPG Toolkit/Loot Table Editor", EditorToolsDocumentationAnchorPrefix + "loot-tables", "Loot tables need at least one weighted item or nested-table entry.", false, RPGToolkitDashboardCapabilityStatus.Partial, RPGToolkitDashboardCapabilityStatus.Missing, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, "Loot Table Editor currently provides a lightweight asset-picker entry point and needs weighted-drop editing UI.", global::SixStringSyn.RPGToolkit2D.Editor.Windows.LootTableEditorWindow.Open),
+            CreateSection("NPCs", "Create NPC metadata, dialogue links, party hooks, and world-state keys.", typeof(NPCDefinition), "NewNPCDefinition.asset", "Assets/Create/RPG Toolkit/NPC Definition", EditorToolsDocumentationAnchorPrefix + "npcs", "NPCs often need dialogue links, world-state keys, schedules, or quest relationships.", false, RPGToolkitDashboardCapabilityStatus.Missing, RPGToolkitDashboardCapabilityStatus.Partial, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, "Asset creation and database discovery work; a focused NPC Editor; per-card documentation links are available."),
+            CreateSection("Maps", "Author tile layers, zones, entrances, exits, object placements, and transitions.", typeof(RPGMapDefinition), "NewMapDefinition.asset", "Tools/RPG Toolkit/Maps/Map Editor", EditorToolsDocumentationAnchorPrefix + "maps", "Maps need a tileset before tile layers can be painted reliably.", true, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, "Map authoring has focused tools and validation entry points; deep-link documentation is available.", global::SixStringSyn.RPGToolkit2D.Editor.Windows.MapEditorWindow.Open),
+            CreateSection("Tilesets", "Bridge sprite frames to tile metadata, collision defaults, palettes, and map painting.", typeof(RPGTilesetDefinition), "NewTilesetDefinition.asset", "Tools/RPG Toolkit/Maps/Tileset Editor", EditorToolsDocumentationAnchorPrefix + "tilesets", "Tilesets need sprite sheet/frame metadata before maps can reference tiles safely.", false, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, "Tileset authoring has focused tools and validation entry points; deep-link documentation is available.", global::SixStringSyn.RPGToolkit2D.Editor.Windows.TilesetEditorWindow.Open),
+            CreateSection("Sprite Sheets", "Manage source textures, generated frame metadata, tags, groups, and tile defaults.", typeof(RPGSpriteSheetAsset), "NewSpriteSheetAsset.asset", "Tools/RPG Toolkit/Maps/Sprite Sheet Editor", EditorToolsDocumentationAnchorPrefix + "sprite-sheets", "Sprite sheets need frame metadata, tags, groups, and tile defaults for tilesets.", false, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, "Sprite sheet authoring has focused tools and validation entry points; deep-link documentation is available.", global::SixStringSyn.RPGToolkit2D.Editor.Windows.SpriteSheetEditorWindow.Open),
+            CreateSection("Sprite Sheet Profiles", "Define slicing rules, grid dimensions, naming patterns, pivots, and pixels per unit.", typeof(RPGSpriteSheetProfile), "NewSpriteSheetProfile.asset", "Assets/Create/RPG Toolkit/Foundation/Sprite Sheet Profile", EditorToolsDocumentationAnchorPrefix + "sprite-sheet-profiles", "Profiles define repeatable slicing settings used before generating sprite sheet frame data.", false, RPGToolkitDashboardCapabilityStatus.Missing, RPGToolkitDashboardCapabilityStatus.Partial, RPGToolkitDashboardCapabilityStatus.Complete, RPGToolkitDashboardCapabilityStatus.Complete, "Profiles support asset creation/runtime use, but no focused profile editor exists yet; deep-link documentation is available.")
         };
 
         public static IReadOnlyList<RPGToolkitAuthoringSection> Sections => _sections;
 
         public static IReadOnlyList<RPGToolkitDashboardCapability> Capabilities => _sections.Select(section => section.Capability).ToList();
 
-        private static RPGToolkitAuthoringSection CreateSection(string title, string description, Type assetType, string defaultFileName, string menuPath, string documentationPath, RPGToolkitDashboardCapabilityStatus focusedEditorStatus, RPGToolkitDashboardCapabilityStatus validationStatus, RPGToolkitDashboardCapabilityStatus documentationStatus, RPGToolkitDashboardCapabilityStatus runtimeIntegrationStatus, string notes, Action openEditor = null)
+        private static RPGToolkitAuthoringSection CreateSection(string title, string description, Type assetType, string defaultFileName, string menuPath, string documentationPath, string setupHint, bool warnWhenEmpty, RPGToolkitDashboardCapabilityStatus focusedEditorStatus, RPGToolkitDashboardCapabilityStatus validationStatus, RPGToolkitDashboardCapabilityStatus documentationStatus, RPGToolkitDashboardCapabilityStatus runtimeIntegrationStatus, string notes, Action openEditor = null)
         {
             var capability = new RPGToolkitDashboardCapability(title, assetType, RPGToolkitDashboardCapabilityStatus.Complete, focusedEditorStatus, validationStatus, documentationStatus, runtimeIntegrationStatus, notes);
-            return new RPGToolkitAuthoringSection(title, description, assetType, defaultFileName, menuPath, documentationPath, capability, openEditor);
+            return new RPGToolkitAuthoringSection(title, description, assetType, defaultFileName, menuPath, documentationPath, setupHint, warnWhenEmpty, capability, openEditor);
         }
 
         [MenuItem("Tools/RPG Toolkit/Maps/Create Map Definition")]
@@ -173,6 +201,48 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Dashboard
             }
 
             return entries.Select(entry => new RPGToolkitAssetBrowserEntry(entry.Asset, entry.Path, entry.Asset is RPGObject rpgAsset && !rpgAsset.Id.IsEmpty && ids.TryGetValue(rpgAsset.Id, out var count) && count > 1)).ToList();
+        }
+
+        public static RPGToolkitDashboardCardData BuildCardData(RPGToolkitAuthoringSection section, IReadOnlyDictionary<string, string> lastValidationResults = null)
+        {
+            if (section == null) throw new ArgumentNullException(nameof(section));
+            var entries = FindAssets(section);
+            var invalidAssetCount = 0;
+            var validationMessageCount = 0;
+
+            foreach (var entry in entries)
+            {
+                var result = ValidateAsset(entry.Asset);
+                if (result == null) continue;
+                validationMessageCount += result.Messages.Count;
+                if (!result.IsValid) invalidAssetCount++;
+            }
+
+            var summary = lastValidationResults != null && lastValidationResults.TryGetValue(section.Title, out var lastResult) ? lastResult : "Not validated yet.";
+            return new RPGToolkitDashboardCardData(section, entries, invalidAssetCount, validationMessageCount, summary);
+        }
+
+        public static RPGToolkitDashboardCardData ValidateCard(RPGToolkitAuthoringSection section, IDictionary<string, string> lastValidationResults)
+        {
+            if (section == null) throw new ArgumentNullException(nameof(section));
+            if (lastValidationResults == null) throw new ArgumentNullException(nameof(lastValidationResults));
+            var data = BuildCardData(section, lastValidationResults);
+            lastValidationResults[section.Title] = $"{DateTime.Now:HH:mm:ss}: {data.AssetCount} asset(s), {data.DuplicateIdCount} duplicate ID asset(s), {data.InvalidAssetCount} invalid asset(s), {data.ValidationMessageCount} validation message(s).";
+            return BuildCardData(section, lastValidationResults);
+        }
+
+        private static RPGValidationResult ValidateAsset(UnityEngine.Object asset)
+        {
+            switch (asset)
+            {
+                case QuestDefinition quest: return quest.ValidateQuest();
+                case DialogueDefinition dialogue: return dialogue.ValidateGraph();
+                case LootTableDefinition lootTable: return lootTable.ValidateTable();
+                case RPGMapDefinition map: return map.ValidateMap();
+                case RPGTilesetDefinition tileset: return tileset.ValidateTileset();
+                case RPGSpriteSheetAsset spriteSheet: return spriteSheet.ValidateSpriteSheet();
+                default: return null;
+            }
         }
 
 

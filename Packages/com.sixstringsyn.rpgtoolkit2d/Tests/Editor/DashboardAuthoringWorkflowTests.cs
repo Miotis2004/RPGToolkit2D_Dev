@@ -1,4 +1,5 @@
 using System.IO;
+using System.Collections.Generic;
 using NUnit.Framework;
 using SixStringSyn.RPGToolkit2D.Editor.Dashboard;
 using SixStringSyn.RPGToolkit2D.Editor.Foundation;
@@ -118,6 +119,55 @@ namespace SixStringSyn.RPGToolkit2D.Tests.Editor
                 Assert.That(section.DocumentationPath, Does.Contain("Documentation~/editor-tools.md#"), section.Title);
                 Assert.That(section.Capability.DocumentationStatus, Is.EqualTo(RPGToolkitDashboardCapabilityStatus.Complete), section.Title);
                 Assert.That(RPGToolkitAuthoringWorkflow.DocumentationExists(section), Is.True, section.Title);
+            }
+        }
+
+        [Test]
+        public void Phase3CardDataAggregatesCountsHintsAndValidationState()
+        {
+            var questSection = System.Linq.Enumerable.First(RPGToolkitAuthoringWorkflow.Sections, section => section.AssetType == typeof(SixStringSyn.RPGToolkit2D.Runtime.Quests.QuestDefinition));
+            var quest = RPGToolkitAuthoringWorkflow.CreateAsset(questSection, TestFolder);
+            Assert.That(quest, Is.Not.Null);
+
+            var data = RPGToolkitAuthoringWorkflow.BuildCardData(questSection);
+
+            Assert.That(data.Section, Is.EqualTo(questSection));
+            Assert.That(data.AssetCount, Is.GreaterThanOrEqualTo(1));
+            Assert.That(data.InvalidAssetCount, Is.GreaterThanOrEqualTo(1));
+            Assert.That(data.ValidationMessageCount, Is.GreaterThanOrEqualTo(1));
+            Assert.That(data.LastValidationSummary, Is.EqualTo("Not validated yet."));
+            Assert.That(questSection.SetupHint, Is.Not.Empty);
+        }
+
+        [Test]
+        public void Phase3CardValidationStoresLastValidationSummary()
+        {
+            var mapSection = System.Linq.Enumerable.First(RPGToolkitAuthoringWorkflow.Sections, section => section.AssetType == typeof(RPGMapDefinition));
+            RPGToolkitAuthoringWorkflow.CreateAsset(mapSection, TestFolder);
+            var lastValidation = new Dictionary<string, string>();
+
+            var data = RPGToolkitAuthoringWorkflow.ValidateCard(mapSection, lastValidation);
+
+            Assert.That(lastValidation, Does.ContainKey(mapSection.Title));
+            Assert.That(data.LastValidationSummary, Does.Contain("asset(s)"));
+            Assert.That(data.LastValidationSummary, Does.Contain("invalid asset(s)"));
+        }
+
+        [Test]
+        public void Phase3ImportantEmptyContentTypesWarnAuthors()
+        {
+            foreach (var section in RPGToolkitAuthoringWorkflow.Sections)
+            {
+                Assert.That(section.SetupHint, Is.Not.Empty, section.Title);
+            }
+
+            var mapSection = System.Linq.Enumerable.First(RPGToolkitAuthoringWorkflow.Sections, section => section.AssetType == typeof(RPGMapDefinition));
+            var data = RPGToolkitAuthoringWorkflow.BuildCardData(mapSection);
+
+            if (data.AssetCount == 0)
+            {
+                Assert.That(data.EmptyContentWarning, Does.Contain("No maps"));
+                Assert.That(data.HasWarnings, Is.True);
             }
         }
 

@@ -1,4 +1,5 @@
 using SixStringSyn.RPGToolkit2D.Editor;
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
@@ -10,6 +11,8 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Dashboard
         private string _searchText = string.Empty;
         private int _selectedSection;
         private RPGMapProjectValidationReport _mapValidationReport;
+        private readonly Dictionary<string, bool> _expandedCards = new Dictionary<string, bool>();
+        private readonly Dictionary<string, string> _lastValidationResults = new Dictionary<string, string>();
 
         [MenuItem("Tools/RPG Toolkit/Dashboard")]
         public static void Open()
@@ -102,16 +105,41 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Dashboard
 
         private void DrawAuthoringSections()
         {
-            EditorGUILayout.LabelField("Create RPG Content", EditorStyles.boldLabel);
+            var compact = position.width < 760f;
+            EditorGUILayout.LabelField("Content Workflow Cards", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(compact ? "Compact mode is active: card details are condensed for this window width." : "Expand cards to review project counts, validation health, setup hints, and next actions.", EditorStyles.wordWrappedMiniLabel);
             foreach (var section in RPGToolkitAuthoringWorkflow.Sections)
             {
+                var data = RPGToolkitAuthoringWorkflow.BuildCardData(section, _lastValidationResults);
+                if (!_expandedCards.ContainsKey(section.Title)) _expandedCards[section.Title] = !compact;
+
                 EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-                EditorGUILayout.LabelField(section.Title, EditorStyles.boldLabel);
-                EditorGUILayout.LabelField(section.Description, EditorStyles.wordWrappedLabel);
-                DrawCapabilityChips(section.Capability);
-                if (!string.IsNullOrWhiteSpace(section.Capability.Notes)) EditorGUILayout.LabelField(section.Capability.Notes, EditorStyles.wordWrappedMiniLabel);
                 EditorGUILayout.BeginHorizontal();
-                if (GUILayout.Button(new GUIContent($"Create {section.Title}", $"Create a new {section.AssetType.Name} asset in the default authoring folder."))) RPGToolkitAuthoringWorkflow.CreateAsset(section);
+                _expandedCards[section.Title] = EditorGUILayout.Foldout(_expandedCards[section.Title], section.Title, true);
+                GUILayout.FlexibleSpace();
+                DrawCountPill($"{data.AssetCount} asset(s)");
+                if (data.DuplicateIdCount > 0) DrawCountPill($"{data.DuplicateIdCount} duplicate ID");
+                if (data.InvalidAssetCount > 0) DrawCountPill($"{data.InvalidAssetCount} invalid");
+                EditorGUILayout.EndHorizontal();
+
+                if (!compact) EditorGUILayout.LabelField(section.Description, EditorStyles.wordWrappedLabel);
+                DrawCapabilityChips(section.Capability);
+
+                if (_expandedCards[section.Title])
+                {
+                    EditorGUILayout.LabelField(section.Description, EditorStyles.wordWrappedLabel);
+                    EditorGUILayout.LabelField($"Validation: {data.LastValidationSummary}", EditorStyles.wordWrappedMiniLabel);
+                    if (!string.IsNullOrWhiteSpace(data.EmptyContentWarning)) EditorGUILayout.HelpBox(data.EmptyContentWarning, MessageType.Warning);
+                    if (data.DuplicateIdCount > 0) EditorGUILayout.HelpBox($"{data.DuplicateIdCount} {section.Title} asset(s) share a duplicate RPG ID.", MessageType.Warning);
+                    if (data.InvalidAssetCount > 0) EditorGUILayout.HelpBox($"{data.InvalidAssetCount} {section.Title} asset(s) failed content validation.", MessageType.Warning);
+                    if (!string.IsNullOrWhiteSpace(section.SetupHint)) EditorGUILayout.HelpBox(section.SetupHint, MessageType.Info);
+                    if (!string.IsNullOrWhiteSpace(section.Capability.Notes)) EditorGUILayout.LabelField(section.Capability.Notes, EditorStyles.wordWrappedMiniLabel);
+                }
+
+                EditorGUILayout.BeginHorizontal();
+                if (GUILayout.Button(new GUIContent("Create", $"Create a new {section.AssetType.Name} asset in the default authoring folder."))) RPGToolkitAuthoringWorkflow.CreateAsset(section);
+                if (GUILayout.Button(new GUIContent("Browse", $"Show {section.Title} in the database browser."))) SelectDatabaseSection(section);
+                if (GUILayout.Button(new GUIContent("Validate", $"Validate {section.Title} dashboard card data."))) RPGToolkitAuthoringWorkflow.ValidateCard(section, _lastValidationResults);
                 var toolAvailable = section.Capability.FocusedEditorStatus != RPGToolkitDashboardCapabilityStatus.Missing && RPGToolkitAuthoringWorkflow.HasFocusedTool(section);
                 using (new EditorGUI.DisabledScope(!toolAvailable))
                 {
@@ -120,11 +148,27 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Dashboard
                     if (GUILayout.Button(new GUIContent(toolLabel, toolTip))) RPGToolkitAuthoringWorkflow.TryOpenFocusedTool(section);
                 }
 
-                if (GUILayout.Button(new GUIContent("Open Docs", $"Open the {section.Title} authoring documentation."))) RPGToolkitAuthoringWorkflow.TryOpenDocumentation(section);
+                if (GUILayout.Button(new GUIContent("Docs", $"Open the {section.Title} authoring documentation."))) RPGToolkitAuthoringWorkflow.TryOpenDocumentation(section);
                 EditorGUILayout.EndHorizontal();
                 EditorGUILayout.EndVertical();
             }
             EditorGUILayout.Space();
+        }
+
+        private void DrawCountPill(string text)
+        {
+            GUILayout.Label(text, EditorStyles.miniButton, GUILayout.Width(110f));
+        }
+
+        private void SelectDatabaseSection(RPGToolkitAuthoringSection section)
+        {
+            var sections = RPGToolkitAuthoringWorkflow.Sections;
+            for (var i = 0; i < sections.Count; i++)
+            {
+                if (sections[i] != section) continue;
+                _selectedSection = i;
+                break;
+            }
         }
 
         private void DrawDatabaseBrowser()
