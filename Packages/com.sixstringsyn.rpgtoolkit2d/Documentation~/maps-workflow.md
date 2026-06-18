@@ -158,3 +158,11 @@ public sealed class MapQueryExamples : MonoBehaviour
 ## Sample content
 
 Import **Map Workflow Tutorial** from Package Manager samples to get a compact README and scripts for zone queries, transition requests, and runtime loader setup. The sample is intentionally code-first so it stays safe for projects with their own art style; replace the placeholder references with your own texture, spritesheet profile, tileset, and map assets.
+
+## Performance, Scale, and Usability Polish
+
+Large-map projects should enable the map runtime query cache before running repeated tile, zone, object, or blocker lookups. `RPGMapDefinition.BuildRuntimeQueryCache()` indexes tiles by layer and cell, zones by covered cell, objects by position, and blocked cells so gameplay systems can avoid scanning every layer for each query. Mutating map APIs mark the cache dirty automatically; if tooling edits public placement fields directly, call `MarkRuntimeQueryCacheDirty()` before the next query.
+
+Runtime loading batches layer tile placement through `Tilemap.SetTilesBlock` and only applies per-cell transform matrices to rotated or flipped placements. This keeps dense layers predictable while sparse layers still serialize as designer-friendly placement lists. Use `PerformanceSettings.storageProfile`, `chunkSize`, and `cacheRuntimeQueries` as authoring hints for large projects and future import/export tooling.
+
+Reusable stamps are authored as `RPGMapStampDefinition` assets. A stamp stores relative tile offsets and palette tags, then can be painted into any compatible map with `RPGMapDefinition.PaintStamp`. Editor usability helpers remember recent maps/tilesets, track favorites, store palette search text, and filter palette tiles by id, category, source frame, terrain tags, or custom metadata.

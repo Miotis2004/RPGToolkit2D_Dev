@@ -4,6 +4,14 @@ All notable changes to RPG Toolkit 2D will be documented in this file.
 
 ## [Unreleased]
 
+### Maps Phase 10 - Performance, Scale, and Usability Polish
+
+- Added runtime map query caches for tile, zone, object, and blocked-cell lookups on large maps.
+- Optimized runtime tilemap loading by batching layer tile placement and limiting transform updates to flipped or rotated cells.
+- Added reusable map stamp assets plus editor usability helpers for recent/favorite maps and tilesets and palette search.
+- Added runtime and editor smoke tests covering large-map query caches, stamp painting, and palette filtering.
+
+
 ### Phase 2 Roadmap - Dialogue and Quest Authoring
 
 - Added dialogue authoring metadata for localization keys, portraits, and speaker animations.
