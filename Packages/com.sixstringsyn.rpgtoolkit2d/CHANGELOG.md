@@ -4,6 +4,13 @@ All notable changes to RPG Toolkit 2D will be documented in this file.
 
 ## [0.1.0]
 
+### Phase 8 - Quest System and Quest Editor
+
+- Added quest definitions with objectives, conditions, rewards, validation, save data, tracker state transitions, and dialogue command integration.
+- Added a Quest Editor window for creating, inspecting, and validating quest assets.
+- Added runtime and editor tests for quest progression, persistence, validation, and editor availability.
+
+
 
 ### Phase 7 - Dialogue System and Dialogue Graph Editor
 

@@ -272,3 +272,13 @@ runner.Start(dialogueDefinition, context);
 3. Add line and exit nodes, assign speaker/text content, and link nodes with `NextNodeId` or choices.
 4. Use the editor validation button, or call `ValidateGraph`, to find empty graphs and missing links.
 5. Assign the dialogue asset to an `NPCInteraction` and add an `NPCDialogueAdapter` to start it from interaction.
+
+## Quest System
+
+`QuestDefinition` assets describe prerequisites, objectives, rewards, and whether a project should turn the quest in automatically. Runtime quest flow is managed by `QuestTracker`, which starts quests once `QuestCondition` entries pass, advances objectives from gameplay events, saves `QuestJournalSaveData`, and restores quest instances from known definitions.
+
+Objective types include collect item, talk to NPC, reach location, kill target, custom event, and custom script. Built-in objectives match either an `ItemDefinition` or a target string, while custom script objectives are intentionally data-only extension points for game-specific code.
+
+Rewards support items, experience, currency, and custom actions through `IQuestRewardReceiver`. Projects can use `QuestRewardReceiver` for inventory, character XP, and simple currency storage, or implement the interface to connect rewards to another economy, party, or analytics system.
+
+Dialogue can drive quest progress by binding a `QuestTracker` to a `DialogueRunner` and emitting a `DialogueCommand` named `quest_event`; the command argument is matched against custom event objective target IDs. The Quest Editor is available from **Tools > RPG Toolkit > Quest Editor** for creating, inspecting, and validating quest assets.
