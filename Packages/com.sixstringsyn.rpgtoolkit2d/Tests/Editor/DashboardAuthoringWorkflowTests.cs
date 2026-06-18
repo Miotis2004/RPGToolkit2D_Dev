@@ -38,6 +38,32 @@ namespace SixStringSyn.RPGToolkit2D.Tests.Editor
             window.Close();
         }
 
+        [Test]
+        public void Phase11DashboardExposesDailyUseNavigationTabs()
+        {
+            Assert.That(RPGToolkitDashboardWindow.RequiredPhase11Tabs, Does.Contain("Overview"));
+            Assert.That(RPGToolkitDashboardWindow.RequiredPhase11Tabs, Does.Contain("Create"));
+            Assert.That(RPGToolkitDashboardWindow.RequiredPhase11Tabs, Does.Contain("Database"));
+            Assert.That(RPGToolkitDashboardWindow.RequiredPhase11Tabs, Does.Contain("Validation"));
+            Assert.That(RPGToolkitDashboardWindow.RequiredPhase11Tabs, Does.Contain("Tools"));
+            Assert.That(RPGToolkitDashboardWindow.RequiredPhase11Tabs, Does.Contain("Docs/Samples"));
+        }
+
+        [Test]
+        public void Phase11AssetQueryCacheCanBeManuallyRefreshedForLargeProjects()
+        {
+            var itemSection = System.Linq.Enumerable.First(RPGToolkitAuthoringWorkflow.Sections, section => section.AssetType == typeof(ItemDefinition));
+            RPGToolkitAuthoringWorkflow.ClearAssetQueryCache();
+            var before = RPGToolkitAuthoringWorkflow.FindAssets(itemSection);
+            var asset = RPGToolkitAuthoringWorkflow.CreateAsset(itemSection, TestFolder);
+
+            RPGToolkitAuthoringWorkflow.ClearAssetQueryCache();
+            var after = RPGToolkitAuthoringWorkflow.FindAssets(itemSection);
+
+            Assert.That(System.Linq.Enumerable.Any(after, entry => entry.Asset == asset), Is.True);
+            Assert.That(after.Count, Is.GreaterThanOrEqualTo(before.Count + 1));
+        }
+
 
         [Test]
         public void GameBuilderWindowExposesPhase7Tabs()
