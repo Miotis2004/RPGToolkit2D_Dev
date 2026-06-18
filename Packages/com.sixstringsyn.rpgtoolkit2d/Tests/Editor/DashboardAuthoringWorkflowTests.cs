@@ -64,6 +64,36 @@ namespace SixStringSyn.RPGToolkit2D.Tests.Editor
         }
 
         [Test]
+        public void AuthoringSectionsExposeCapabilityStatusMetadata()
+        {
+            foreach (var section in RPGToolkitAuthoringWorkflow.Sections)
+            {
+                Assert.That(section.Capability, Is.Not.Null, section.Title);
+                Assert.That(section.Capability.ContentTitle, Is.EqualTo(section.Title), section.Title);
+                Assert.That(section.Capability.AssetType, Is.EqualTo(section.AssetType), section.Title);
+                Assert.That(section.Capability.AssetCreationStatus, Is.EqualTo(RPGToolkitDashboardCapabilityStatus.Complete), section.Title);
+                Assert.That(section.Capability.Notes, Is.Not.Empty, section.Title);
+            }
+        }
+
+        [Test]
+        public void DashboardCapabilitiesCoverKnownCompletePartialAndMissingStates()
+        {
+            var statuses = System.Linq.Enumerable.SelectMany(RPGToolkitAuthoringWorkflow.Sections, section => new[]
+            {
+                section.Capability.AssetCreationStatus,
+                section.Capability.FocusedEditorStatus,
+                section.Capability.ValidationStatus,
+                section.Capability.DocumentationStatus,
+                section.Capability.RuntimeIntegrationStatus
+            });
+
+            Assert.That(statuses, Does.Contain(RPGToolkitDashboardCapabilityStatus.Complete));
+            Assert.That(statuses, Does.Contain(RPGToolkitDashboardCapabilityStatus.Partial));
+            Assert.That(statuses, Does.Contain(RPGToolkitDashboardCapabilityStatus.Missing));
+        }
+
+        [Test]
         public void CreationWizardCreatesValidCharacterAsset()
         {
             var characterSection = System.Linq.Enumerable.First(RPGToolkitAuthoringWorkflow.Sections, section => section.AssetType == typeof(CharacterDefinition));

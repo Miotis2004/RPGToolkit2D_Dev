@@ -24,6 +24,7 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Dashboard
             _scroll = EditorGUILayout.BeginScrollView(_scroll);
             DrawHeader();
             DrawQuickStart();
+            DrawCapabilityLegend();
             DrawAuthoringSections();
             DrawDatabaseBrowser();
             DrawUtilities();
@@ -49,6 +50,56 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Dashboard
             EditorGUILayout.Space();
         }
 
+        private void DrawCapabilityLegend()
+        {
+            EditorGUILayout.LabelField("Dashboard Status Legend", EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox("Complete = production-ready dashboard workflow. Partial = usable but known gaps remain. Missing = planned but not yet implemented. N/A = not required for this content type.", MessageType.Info);
+            EditorGUILayout.Space();
+        }
+
+        private void DrawCapabilityChips(RPGToolkitDashboardCapability capability)
+        {
+            EditorGUILayout.BeginHorizontal();
+            DrawStatusChip("Create", capability.AssetCreationStatus);
+            DrawStatusChip("Editor", capability.FocusedEditorStatus);
+            DrawStatusChip("Validate", capability.ValidationStatus);
+            DrawStatusChip("Docs", capability.DocumentationStatus);
+            DrawStatusChip("Runtime", capability.RuntimeIntegrationStatus);
+            EditorGUILayout.EndHorizontal();
+        }
+
+        private void DrawStatusChip(string label, RPGToolkitDashboardCapabilityStatus status)
+        {
+            var previousColor = GUI.backgroundColor;
+            GUI.backgroundColor = StatusColor(status);
+            GUILayout.Label($"{label}: {StatusLabel(status)}", EditorStyles.miniButton, GUILayout.Width(112f));
+            GUI.backgroundColor = previousColor;
+        }
+
+        private static string StatusLabel(RPGToolkitDashboardCapabilityStatus status)
+        {
+            switch (status)
+            {
+                case RPGToolkitDashboardCapabilityStatus.Complete: return "Complete";
+                case RPGToolkitDashboardCapabilityStatus.Partial: return "Partial";
+                case RPGToolkitDashboardCapabilityStatus.Missing: return "Missing";
+                case RPGToolkitDashboardCapabilityStatus.NotApplicable: return "N/A";
+                default: return status.ToString();
+            }
+        }
+
+        private static Color StatusColor(RPGToolkitDashboardCapabilityStatus status)
+        {
+            switch (status)
+            {
+                case RPGToolkitDashboardCapabilityStatus.Complete: return new Color(0.55f, 0.9f, 0.55f);
+                case RPGToolkitDashboardCapabilityStatus.Partial: return new Color(1f, 0.85f, 0.35f);
+                case RPGToolkitDashboardCapabilityStatus.Missing: return new Color(1f, 0.55f, 0.5f);
+                case RPGToolkitDashboardCapabilityStatus.NotApplicable: return new Color(0.75f, 0.75f, 0.75f);
+                default: return Color.white;
+            }
+        }
+
         private void DrawAuthoringSections()
         {
             EditorGUILayout.LabelField("Create RPG Content", EditorStyles.boldLabel);
@@ -57,6 +108,8 @@ namespace SixStringSyn.RPGToolkit2D.Editor.Dashboard
                 EditorGUILayout.BeginVertical(EditorStyles.helpBox);
                 EditorGUILayout.LabelField(section.Title, EditorStyles.boldLabel);
                 EditorGUILayout.LabelField(section.Description, EditorStyles.wordWrappedLabel);
+                DrawCapabilityChips(section.Capability);
+                if (!string.IsNullOrWhiteSpace(section.Capability.Notes)) EditorGUILayout.LabelField(section.Capability.Notes, EditorStyles.wordWrappedMiniLabel);
                 EditorGUILayout.BeginHorizontal();
                 if (GUILayout.Button($"Create {section.Title}")) RPGToolkitAuthoringWorkflow.CreateAsset(section);
                 if (GUILayout.Button("Open Menu/Docs")) RPGToolkitAuthoringWorkflow.OpenDocumentation(section.DocumentationPath);
