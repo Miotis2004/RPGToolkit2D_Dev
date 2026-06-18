@@ -8,6 +8,7 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Maps
 {
     public enum RPGMapLayerKind { Ground, Decoration, Collision, Overhead, Trigger }
     public enum RPGMapZoneKind { Region, Encounter, Weather, Lighting, Spawn }
+    public enum RPGMapMetadataScope { Tile, Layer, Collision, Zone, Object, Connection }
     public enum RPGMapObjectCategory { NPC, Monster, Item, Chest, Door, SavePoint, Decoration, Custom }
     public enum RPGMapDirection { None, North, East, South, West }
     public enum RPGMapTransitionKind { Instant, Fade, Door, Stairs, Custom }
@@ -106,6 +107,29 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Maps
         public string targetEntranceId;
         public RPGMapDirection facing = RPGMapDirection.South;
         public RPGMapTransitionKind transitionKind = RPGMapTransitionKind.Fade;
+    }
+
+    [Serializable]
+    public sealed class RPGMapEffectiveMetadataEntry
+    {
+        public RPGMapMetadataScope scope;
+        public string ownerId;
+        public string key;
+        public string value;
+        public int priority;
+    }
+
+    [Serializable]
+    public sealed class RPGMapCellMetadata
+    {
+        public Vector2Int position;
+        public bool blocked;
+        public List<RPGMapTile> tiles = new List<RPGMapTile>();
+        public List<RPGMapZone> zones = new List<RPGMapZone>();
+        public List<RPGMapObjectPlacement> objects = new List<RPGMapObjectPlacement>();
+        public List<RPGMapEntrance> entrances = new List<RPGMapEntrance>();
+        public List<RPGMapExit> exits = new List<RPGMapExit>();
+        public List<RPGMapEffectiveMetadataEntry> metadata = new List<RPGMapEffectiveMetadataEntry>();
     }
 
     [CreateAssetMenu(fileName = "RPGMapDefinition", menuName = "RPG Toolkit/Maps/Map")]
@@ -281,6 +305,51 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Maps
             return changed;
         }
 
+        public RPGMapZone AddZone(string displayName, RPGMapZoneKind kind, RectInt bounds, string payloadId = null)
+        {
+            MigrateExpandedMapData();
+            var baseName = string.IsNullOrWhiteSpace(displayName) ? kind.ToString() : displayName.Trim();
+            var zone = new RPGMapZone
+            {
+                zoneId = GenerateUniqueZoneId(baseName),
+                displayName = baseName,
+                kind = kind,
+                bounds = ClampRect(bounds.width <= 0 || bounds.height <= 0 ? new RectInt(0, 0, 1, 1) : bounds),
+                payloadId = payloadId,
+                priority = _zones.Count == 0 ? 0 : _zones.Max(existing => existing?.priority ?? 0) + 1
+            };
+            _zones.Add(zone);
+            return zone;
+        }
+
+        public bool RemoveZone(string zoneId)
+        {
+            var zone = FindZone(zoneId);
+            return zone != null && _zones.Remove(zone);
+        }
+
+        public RPGMapZone FindZone(string zoneId) => string.IsNullOrWhiteSpace(zoneId) ? null : _zones.FirstOrDefault(zone => zone != null && string.Equals(zone.zoneId, zoneId, StringComparison.OrdinalIgnoreCase));
+
+        public bool PaintZoneCell(string zoneId, Vector2Int position)
+        {
+            var zone = FindZone(zoneId);
+            if (zone == null || !IsInBounds(position)) return false;
+            zone.bounds = RectUnion(zone.bounds, new RectInt(position.x, position.y, 1, 1));
+            return true;
+        }
+
+        public bool EraseZoneCell(string zoneId, Vector2Int position)
+        {
+            var zone = FindZone(zoneId);
+            if (zone == null || !zone.bounds.Contains(position)) return false;
+            if (zone.bounds.width == 1 && zone.bounds.height == 1) return RemoveZone(zoneId);
+            if (position.x == zone.bounds.xMin) zone.bounds = new RectInt(zone.bounds.xMin + 1, zone.bounds.yMin, zone.bounds.width - 1, zone.bounds.height);
+            else if (position.x == zone.bounds.xMax - 1) zone.bounds = new RectInt(zone.bounds.xMin, zone.bounds.yMin, zone.bounds.width - 1, zone.bounds.height);
+            if (position.y == zone.bounds.yMin) zone.bounds = new RectInt(zone.bounds.xMin, zone.bounds.yMin + 1, zone.bounds.width, zone.bounds.height - 1);
+            else if (position.y == zone.bounds.yMax - 1) zone.bounds = new RectInt(zone.bounds.xMin, zone.bounds.yMin, zone.bounds.width, zone.bounds.height - 1);
+            return true;
+        }
+
         private string GenerateUniqueLayerId(string displayName)
         {
             var stem = new string((displayName ?? "Layer").Select(ch => char.IsLetterOrDigit(ch) ? ch : '_').ToArray()).Trim('_');
@@ -288,6 +357,16 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Maps
             var candidate = stem;
             var index = 1;
             while (FindLayer(candidate) != null) candidate = $"{stem}_{++index}";
+            return candidate;
+        }
+
+        private string GenerateUniqueZoneId(string displayName)
+        {
+            var stem = new string((displayName ?? "Zone").Select(ch => char.IsLetterOrDigit(ch) ? ch : '_').ToArray()).Trim('_');
+            if (string.IsNullOrWhiteSpace(stem)) stem = "Zone";
+            var candidate = stem;
+            var index = 1;
+            while (FindZone(candidate) != null) candidate = $"{stem}_{++index}";
             return candidate;
         }
 
@@ -317,13 +396,15 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Maps
 
         public IEnumerable<RPGMapZone> GetZonesAt(Vector2Int position, RPGMapZoneKind? kind = null, string tag = null)
         {
-            foreach (var zone in _zones)
+            foreach (var zone in _zones.OrderByDescending(zone => zone?.priority ?? int.MinValue).ThenBy(zone => zone?.zoneId))
             {
                 if (zone == null || (kind.HasValue && zone.kind != kind.Value) || !zone.bounds.Contains(position)) continue;
                 if (!string.IsNullOrWhiteSpace(tag) && (zone.tags == null || !zone.tags.Any(value => string.Equals(value, tag, StringComparison.OrdinalIgnoreCase)))) continue;
                 yield return zone;
             }
         }
+
+        public RPGMapZone GetHighestPriorityZoneAt(Vector2Int position, RPGMapZoneKind? kind = null, string tag = null) => GetZonesAt(position, kind, tag).FirstOrDefault();
 
         public IEnumerable<RPGMapTile> GetTilesAt(Vector2Int position)
         {
@@ -363,6 +444,27 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Maps
                 if (layer.tiles != null && layer.tiles.Any(tile => tile != null && tile.position == position && (!tile.overrideCollision || tile.blocksMovementOverride))) return true;
             }
             return _objects.Any(placement => placement != null && placement.blocksMovement && placement.gridPosition == position);
+        }
+
+        public RPGMapCellMetadata GetCellMetadata(Vector2Int position)
+        {
+            var cell = new RPGMapCellMetadata { position = position, blocked = IsBlocked(position) };
+            cell.tiles.AddRange(GetTilesAt(position));
+            cell.zones.AddRange(GetZonesAt(position));
+            cell.objects.AddRange(_objects.Where(placement => placement != null && placement.gridPosition == position));
+            cell.entrances.AddRange(_entrances.Where(entrance => entrance != null && entrance.position == position));
+            cell.exits.AddRange(_exits.Where(exit => exit != null && exit.position == position));
+            foreach (var tile in cell.tiles)
+                foreach (var entry in tile.overrideMetadata ?? Enumerable.Empty<RPGMapMetadataEntry>())
+                    AddEffectiveMetadata(cell, RPGMapMetadataScope.Tile, tile.tileId, entry, 0);
+            foreach (var zone in cell.zones)
+                AddEffectiveMetadata(cell, RPGMapMetadataScope.Zone, zone.zoneId, new RPGMapMetadataEntry { key = "payloadId", value = zone.payloadId }, zone.priority);
+            foreach (var placement in cell.objects)
+                foreach (var entry in placement.metadata ?? Enumerable.Empty<RPGMapMetadataEntry>())
+                    AddEffectiveMetadata(cell, RPGMapMetadataScope.Object, placement.objectId, entry, 0);
+            foreach (var exit in cell.exits)
+                AddEffectiveMetadata(cell, RPGMapMetadataScope.Connection, exit.exitId, new RPGMapMetadataEntry { key = "targetEntranceId", value = exit.targetEntranceId }, 0);
+            return cell;
         }
 
         public RPGMapTile GetTopTile(Vector2Int position) => _layers.OrderBy(layer => layer?.renderOrder ?? 0).SelectMany(layer => layer?.tiles ?? Enumerable.Empty<RPGMapTile>()).LastOrDefault(tile => tile != null && tile.position == position);
@@ -444,9 +546,12 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Maps
 
         private void ValidateZones(RPGValidationResult result)
         {
+            var zoneIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (var zone in _zones)
             {
                 if (zone == null) continue;
+                if (string.IsNullOrWhiteSpace(zone.zoneId)) result.AddError("RPG_MAP_EMPTY_ZONE_ID", $"{name} contains a zone without an id.", Id);
+                else if (!zoneIds.Add(zone.zoneId)) result.AddError("RPG_MAP_DUPLICATE_ZONE_ID", $"{name} has duplicate zone id {zone.zoneId}.", Id);
                 if (!IsRectInBounds(zone.bounds)) result.AddError("RPG_MAP_ZONE_OUT_OF_BOUNDS", $"{name}/{zone.zoneId} is outside map bounds.", Id);
             }
         }
@@ -459,5 +564,26 @@ namespace SixStringSyn.RPGToolkit2D.Runtime.Maps
 
         private bool IsInBounds(Vector2Int position) => position.x >= 0 && position.y >= 0 && position.x < _size.x && position.y < _size.y;
         private bool IsRectInBounds(RectInt rect) => rect.width > 0 && rect.height > 0 && IsInBounds(rect.min) && rect.xMax <= _size.x && rect.yMax <= _size.y;
+        private RectInt ClampRect(RectInt rect)
+        {
+            var xMin = Mathf.Clamp(rect.xMin, 0, Mathf.Max(0, _size.x - 1));
+            var yMin = Mathf.Clamp(rect.yMin, 0, Mathf.Max(0, _size.y - 1));
+            var xMax = Mathf.Clamp(rect.xMax, xMin + 1, _size.x);
+            var yMax = Mathf.Clamp(rect.yMax, yMin + 1, _size.y);
+            return new RectInt(xMin, yMin, xMax - xMin, yMax - yMin);
+        }
+        private static RectInt RectUnion(RectInt a, RectInt b)
+        {
+            var xMin = Mathf.Min(a.xMin, b.xMin);
+            var yMin = Mathf.Min(a.yMin, b.yMin);
+            var xMax = Mathf.Max(a.xMax, b.xMax);
+            var yMax = Mathf.Max(a.yMax, b.yMax);
+            return new RectInt(xMin, yMin, xMax - xMin, yMax - yMin);
+        }
+        private static void AddEffectiveMetadata(RPGMapCellMetadata cell, RPGMapMetadataScope scope, string ownerId, RPGMapMetadataEntry entry, int priority)
+        {
+            if (entry == null || string.IsNullOrWhiteSpace(entry.key)) return;
+            cell.metadata.Add(new RPGMapEffectiveMetadataEntry { scope = scope, ownerId = ownerId, key = entry.key, value = entry.value, priority = priority });
+        }
     }
 }

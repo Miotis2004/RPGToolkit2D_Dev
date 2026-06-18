@@ -50,10 +50,35 @@ namespace SixStringSyn.RPGToolkit2D.Tests.Runtime.PhaseMaps
         public void ZonesCanBeQueriedByKindAndTag()
         {
             var map = ScriptableObject.CreateInstance<RPGMapDefinition>();
-            GetList(map, "_zones").Add(new RPGMapZone { zoneId = "forest", kind = RPGMapZoneKind.Encounter, bounds = new RectInt(0, 0, 4, 4), tags = { "night" } });
+            GetList(map, "_zones").Add(new RPGMapZone { zoneId = "forest", kind = RPGMapZoneKind.Encounter, bounds = new RectInt(0, 0, 4, 4), priority = 3, tags = { "night" } });
             GetList(map, "_zones").Add(new RPGMapZone { zoneId = "lights", kind = RPGMapZoneKind.Lighting, bounds = new RectInt(0, 0, 4, 4), tags = { "night" } });
+            GetList(map, "_zones").Add(new RPGMapZone { zoneId = "ambush", kind = RPGMapZoneKind.Encounter, bounds = new RectInt(0, 0, 4, 4), priority = 9, tags = { "night" } });
 
-            Assert.AreEqual("forest", map.GetZonesAt(new Vector2Int(1, 1), RPGMapZoneKind.Encounter, "night").Single().zoneId);
+            Assert.AreEqual("ambush", map.GetZonesAt(new Vector2Int(1, 1), RPGMapZoneKind.Encounter, "night").First().zoneId);
+            Assert.AreEqual("ambush", map.GetHighestPriorityZoneAt(new Vector2Int(1, 1), RPGMapZoneKind.Encounter, "night").zoneId);
+        }
+
+        [Test]
+        public void EffectiveCollisionAndCellMetadataIncludeTilesZonesObjectsAndConnections()
+        {
+            var map = ScriptableObject.CreateInstance<RPGMapDefinition>();
+            map.Configure(new Vector2Int(8, 8));
+            var layer = map.AddLayer("Ground");
+            map.PaintTile(layer.layerId, new Vector2Int(2, 2), "grass");
+            map.GetLayerTile(layer.layerId, new Vector2Int(2, 2)).overrideMetadata.Add(new RPGMapMetadataEntry { key = "footstep", value = "grass" });
+            map.AddZone("forest", RPGMapZoneKind.Encounter, new RectInt(1, 1, 3, 3), "slime-pack").priority = 10;
+            GetList(map, "_objects").Add(new RPGMapObjectPlacement { objectId = "crate", gridPosition = new Vector2Int(2, 2), blocksMovement = true, metadata = { new RPGMapMetadataEntry { key = "loot", value = "potion" } } });
+            GetList(map, "_exits").Add(new RPGMapExit { exitId = "north", position = new Vector2Int(2, 2), targetMapId = "overworld", targetEntranceId = "south" });
+
+            var metadata = map.GetCellMetadata(new Vector2Int(2, 2));
+
+            Assert.IsTrue(metadata.blocked);
+            Assert.AreEqual("grass", metadata.tiles.Single().tileId);
+            Assert.AreEqual("forest", metadata.zones.Single().zoneId);
+            Assert.AreEqual("crate", metadata.objects.Single().objectId);
+            CollectionAssert.Contains(metadata.metadata.Select(entry => entry.key).ToArray(), "payloadId");
+            CollectionAssert.Contains(metadata.metadata.Select(entry => entry.key).ToArray(), "footstep");
+            CollectionAssert.Contains(metadata.metadata.Select(entry => entry.key).ToArray(), "loot");
         }
 
         [Test]
