@@ -263,7 +263,7 @@ runner.Start(dialogueDefinition, context);
 
 ### Runtime Presentation
 
-`DialogueRunner` owns deterministic traversal and exposes `CurrentNode`, `AvailableChoices`, `Continue`, and `SelectChoice`. Implement `IDialoguePresenter` on a UI adapter to display lines and hide the dialogue panel when the runner ends. `NPCDialogueAdapter` listens to `NPCInteraction.Interacted` and starts the assigned `DialogueDefinition`, allowing scene NPCs to launch conversations without coupling the toolkit to a specific UI prefab.
+`DialogueRunner` owns deterministic traversal and exposes `CurrentNode`, `AvailableChoices`, `Continue`, and `SelectChoice`. The runner also maintains a per-session `DialogueTranscript` that records every entered line and selected choice, raises `TranscriptEntryAdded`, and can filter recorded lines by speaker for journal or accessibility UI. Implement `IDialoguePresenter` on a UI adapter to display lines and hide the dialogue panel when the runner ends. `NPCDialogueAdapter` listens to `NPCInteraction.Interacted` and starts the assigned `DialogueDefinition`, allowing scene NPCs to launch conversations without coupling the toolkit to a specific UI prefab.
 
 ### Authoring Workflow
 

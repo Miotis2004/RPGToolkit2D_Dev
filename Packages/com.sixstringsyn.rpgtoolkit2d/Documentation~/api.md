@@ -7,7 +7,7 @@ The package uses the `SixStringSyn.RPGToolkit2D` root namespace. Runtime APIs li
 - `Runtime.Core` contains stable identifiers, tags, validation results, base definition objects, and generic definition databases.
 - `Runtime.Items`, `Runtime.Inventory`, and `Runtime.Equipment` contain item definitions, item instances, inventory containers, slots, equipment slots, and save data.
 - `Runtime.Characters` and `Runtime.Stats` contain character definitions, instances, stat blocks, modifiers, resource pools, and progression curves.
-- `Runtime.Dialogue` contains dialogue definitions, choices, conditions, commands, runners, context interfaces, and presenter interfaces.
+- `Runtime.Dialogue` contains dialogue definitions, choices, conditions, commands, runners, context interfaces, presenter interfaces, and transcript models for capturing played conversations.
 - `Runtime.Quests` contains quest definitions, objectives, rewards, runtime instances, journal save data, and quest tracking.
 - `Runtime.Saving` contains save game containers, contributors, results, and slot services.
 - `Runtime.Interactions` and `Runtime.World` contain interactable contracts, detector helpers, pickup/NPC/door components, world state, spawn points, and scene transition services.

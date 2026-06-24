@@ -4,6 +4,11 @@ All notable changes to RPG Toolkit 2D will be documented in this file.
 
 ## [Unreleased]
 
+### Phase 1 - Transcript MVP
+
+- Added a runtime dialogue transcript that records entered lines, selected choices, timestamps, speaker filtering, and transcript-entry notifications from `DialogueRunner`.
+
+
 ### Dashboard Phase 12 - Tests, Documentation, and Release Readiness
 
 - Added release-readiness editor coverage for dashboard metadata completeness, every content-card creation action, focused tool launch metadata, database duplicate ID detection, validation aggregation, and focused editor validation workflows.
